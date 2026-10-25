@@ -8,5 +8,5 @@
     "allowImportingTsExtensions": true,
     "noUnusedLocals": false
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "e2e/**/*.ts", "playwright.config.ts", "vite.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "e2e/**/*.ts", "playwright.config.ts", "vite.config.ts", "vitest.config.ts"]
 }
