@@ -11,6 +11,8 @@ coverage/
 test-results/
 playwright-report/
 blob-report/
+backups/
 apps/api/prisma/dev.db
 apps/api/prisma/*.db
 *.tsbuildinfo
+apps/api/generated/
