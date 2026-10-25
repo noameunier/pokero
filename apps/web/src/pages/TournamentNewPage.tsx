@@ -259,12 +259,12 @@ export function TournamentNewPage() {
         commonCount: mode === 'MANUAL' ? commonCount : 0,
         maxChipsPerPlayer,
       }),
-    enabled: Boolean(chipCaseId) && players >= 2 && targetBuyIn > 0,
+    enabled: Boolean(chipCaseId) && players >= 2 && targetBuyIn > 0 && startingStack > 0,
     retry: false,
   });
 
   const generatedLevels = useMemo(() => {
-    if (!autoGenerate) return null;
+    if (!autoGenerate || startingStack <= 0) return null;
     try {
       return generateBlindStructure({
         startingStack,
@@ -385,6 +385,8 @@ export function TournamentNewPage() {
       if (!chipCaseId) return setFormError('Choisissez une mallette.');
     }
     if (step === 1) {
+      if (targetBuyIn <= 0) return setFormError('Indiquez une valeur de cave positive.');
+      if (startingStack <= 0) return setFormError('Indiquez un tapis de départ positif.');
       if (players < 2) return setFormError('Il faut au moins deux joueurs.');
       if (planQuery.error) return setFormError(errorMessage(planQuery.error));
       if (!planQuery.data) return setFormError('Calcul de la cave en cours…');
@@ -431,6 +433,15 @@ export function TournamentNewPage() {
     ? (generatedLevels?.levels.filter((level) => level.kind === 'PLAY').length ?? 0)
     : manualLevels.filter((level) => level.kind === 'PLAY').length;
   const plan = planQuery.data?.plan ?? null;
+  const suggestedBuyIn =
+    mode === 'AUTO' && plan && !plan.exact && plan.perPlayerValue > 0
+      ? plan.perPlayerValue
+      : null;
+  const applySuggestedBuyIn = () => {
+    if (!suggestedBuyIn) return;
+    setTargetBuyIn(suggestedBuyIn);
+    setStartingStack(suggestedBuyIn);
+  };
   const manualChipTypes = selectedChipCase?.chipTypes ?? [];
 
   const toggleCommon = (chipTypeId: string, enabled: boolean) =>
@@ -639,13 +650,34 @@ export function TournamentNewPage() {
                   inputMode="numeric"
                   min={1}
                   step={100}
-                  value={targetBuyIn}
+                  value={targetBuyIn || ''}
                   onChange={(event) => {
-                    const value = Number(event.target.value) || 1;
+                    const parsed = Number.parseInt(event.target.value, 10);
+                    const value = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
                     setTargetBuyIn(value);
                     setStartingStack(value);
                   }}
                 />
+                {mode === 'AUTO' && plan && !planQuery.isFetching ? (
+                  plan.exact ? (
+                    <p className="mt-1.5 text-[11px] text-success-300">
+                      Valeur réalisable avec cette mallette.
+                    </p>
+                  ) : suggestedBuyIn ? (
+                    <>
+                      <p className="mt-1.5 text-[11px] leading-relaxed text-cream-400">
+                        Valeur réalisable avec cette mallette :
+                      </p>
+                      <button
+                        type="button"
+                        onClick={applySuggestedBuyIn}
+                        className="mt-1 inline-flex min-h-8 items-center rounded-full border border-gold-500/30 bg-gold-500/10 px-2.5 text-[11px] font-semibold text-gold-300 transition hover:border-gold-500/50 hover:bg-gold-500/15 hover:text-gold-200"
+                      >
+                        Utiliser {formatChips(suggestedBuyIn)}
+                      </button>
+                    </>
+                  ) : null
+                ) : null}
               </Field>
               <Field label={t('tournament.startingStack')} htmlFor="starting-stack">
                 <Input
@@ -654,8 +686,11 @@ export function TournamentNewPage() {
                   inputMode="numeric"
                   min={1}
                   step={100}
-                  value={startingStack}
-                  onChange={(event) => setStartingStack(Number(event.target.value) || 1)}
+                  value={startingStack || ''}
+                  onChange={(event) => {
+                    const parsed = Number.parseInt(event.target.value, 10);
+                    setStartingStack(Number.isFinite(parsed) && parsed > 0 ? parsed : 0);
+                  }}
                 />
               </Field>
               <Field label="Jetons max / joueur" htmlFor="max-chips">

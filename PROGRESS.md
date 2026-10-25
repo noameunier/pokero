@@ -13,7 +13,7 @@ statistiques et suppression de compte RGPD.
 
 La refonte UI/UX est terminée, fusionnée sur `main` et **déployée en
 production** le 25 octobre 2026. Elle a été validée en local (typecheck, build,
-76 tests unitaires/intégration, 4 scénarios E2E, captures avant/après) puis
+76 tests unitaires/intégration, 5 scénarios E2E, captures avant/après) puis
 vérifiée en HTTPS (santé, thème, polices, absence d'erreur console).
 
 L'application mobile Capacitor reste à faire (phase P9). Aucun test sur appareil
@@ -125,9 +125,9 @@ revendiqués.
 - Playwright/Chromium, parcours organisateur complet :
   inscription → mallette → tournoi → joueurs → démarrage du chrono → éliminations
   → clôture → lien spectateur valide → lien invalide → suppression de compte.
-- **4/4 scénarios verts** avec API et Vite lancés par Playwright : parcours
+- **5/5 scénarios verts** avec API et Vite lancés par Playwright : parcours
   organisateur complet, saisie mobile, quantité commune de jetons, aperçu local
-  de cave et enregistrement depuis le bas de la page.
+  de cave et enregistrement depuis le bas de la page, valeur de cave réalisable.
 
 ### Déploiement
 
@@ -150,7 +150,7 @@ revendiqués.
 | `pnpm --filter @pokero/api typecheck` | ✅ |
 | `pnpm --filter @pokero/web typecheck` | ✅ |
 | `pnpm --filter @pokero/web build` | ✅ |
-| `pnpm --filter @pokero/web test:e2e` | 4/4 ✅ |
+| `pnpm --filter @pokero/web test:e2e` | 5/5 ✅ |
 | Refonte en production (HTTPS, thème, polices, console) | ✅ |
 | Captures Playwright avant/après | 59 avant, 135 après + 5 états ✅ |
 | Débordement horizontal (320 px, 13 routes) | 0 ✅ |

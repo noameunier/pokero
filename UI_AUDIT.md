@@ -161,9 +161,9 @@ Correction : passage à des **tokens pleins**. Il reste aujourd’hui **0** coul
 | Modales | Focus trap, `Escape`, restitution du focus, `aria-*` |
 | États vide/chargement/erreur | Capturés et vérifiés |
 | Typecheck web | ✅ |
-| Build Vite | ✅ (`index.js` ≈ 645 kB minifié, ≈ 185 kB gzip) |
+| Build Vite | ✅ (`index.js` ≈ 646 kB minifié, ≈ 185 kB gzip) |
 | Tests unitaires | 47 domaine + 29 API ✅ |
-| E2E | 4/4 ✅ |
+| E2E | 5/5 ✅ |
 | Production HTTPS (thème, polices, console) | ✅ |
 
 ## 6. Non-régression fonctionnelle

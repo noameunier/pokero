@@ -71,14 +71,15 @@ Commande :
 E2E_BASE_URL=http://127.0.0.1:5173 pnpm test:e2e
 ```
 
-Résultat : **4/4 scénarios verts** (59,7 s au total, dernier passage).
+Résultat : **5/5 scénarios verts** (57,5 s au total, dernier passage).
 
 | Scénario | Fichier | Durée | Couverture |
 |---|---|---|---|
-| Parcours organisateur complet | `e2e/tournament.spec.ts` | 27,3 s | Inscription, mallettes, tournoi, jetons communs, joueurs, chrono, éliminations avec confirmation, clôture, classement, lien spectateur, lien invalide, suppression RGPD |
-| Saisie mobile | `e2e/mobile-layout.spec.ts` | 7,9 s | Valeurs et quantités lisibles, pas de débordement, suppression de compte |
-| Quantité commune de jetons | `e2e/chip-common.spec.ts` | 12,3 s | Case globale, cases par jeton, valeur commune, retour aux valeurs spécifiques, alerte de stock |
-| Aperçu local de cave | `e2e/chip-case-preview.spec.ts` | 10,3 s | Aperçu calculé avec les valeurs non enregistrées, avertissement d’obsolescence, enregistrement depuis le bas de page, suppression |
+| Parcours organisateur complet | `e2e/tournament.spec.ts` | 23,0 s | Inscription, mallettes, tournoi, jetons communs, joueurs, chrono, éliminations avec confirmation, clôture, classement, lien spectateur, lien invalide, suppression RGPD |
+| Saisie mobile | `e2e/mobile-layout.spec.ts` | 5,9 s | Valeurs et quantités lisibles, pas de débordement, suppression de compte |
+| Quantité commune de jetons | `e2e/chip-common.spec.ts` | 10,3 s | Case globale, cases par jeton, valeur commune, retour aux valeurs spécifiques, alerte de stock |
+| Aperçu local de cave | `e2e/chip-case-preview.spec.ts` | 7,8 s | Aperçu calculé avec les valeurs non enregistrées, avertissement d’obsolescence, enregistrement depuis le bas de page, suppression |
+| Valeur de cave réalisable | `e2e/tournament-buy-in.spec.ts` | 8,2 s | Champ vidable et réécrit, proposition issue du stock, application, distribution exacte |
 
 Adaptations rendues nécessaires par la refonte, sans modifier les attentes
 fonctionnelles :
