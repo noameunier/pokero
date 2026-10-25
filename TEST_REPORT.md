@@ -54,10 +54,10 @@ Sortie de build :
 
 | Fichier | Taille |
 |---|---|
-| `index-*.js` | ≈ 648 kB minifié, ≈ 185 kB gzip |
+| `index-*.js` | ≈ 655 kB minifié, ≈ 187 kB gzip |
 | `index-*.css` | ≈ 87 kB minifié, ≈ 18 kB gzip |
 | Polices | Manrope ≈ 25 kB, Instrument Serif ≈ 21–22 kB (woff2) |
-| Pré-cache PWA | 27 entrées, ≈ 870 KiB |
+| Pré-cache PWA | 27 entrées, ≈ 877 KiB |
 
 L’avertissement Vite sur la taille du chunk principal reste présent. Il est
 antérieur à la refonte et n’est pas bloquant ; aucun découpage de code n’a été
@@ -71,15 +71,15 @@ Commande :
 E2E_BASE_URL=http://127.0.0.1:5173 pnpm test:e2e
 ```
 
-Résultat : **5/5 scénarios verts** (51,5 s au total, dernier passage).
+Résultat : **5/5 scénarios verts** (84,0 s au total, dernier passage).
 
 | Scénario | Fichier | Durée | Couverture |
 |---|---|---|---|
-| Parcours organisateur complet | `e2e/tournament.spec.ts` | 22,0 s | Inscription, mallettes, tournoi avec PIN et déverrouillage, premier niveau distinct, capacité de rebuy, jetons communs, joueurs, chrono, éliminations avec confirmation, clôture, classement, lien spectateur, lien invalide, suppression RGPD |
-| Saisie mobile | `e2e/mobile-layout.spec.ts` | 4,9 s | Valeurs et quantités lisibles, pas de débordement, suppression de compte |
-| Quantité commune de jetons | `e2e/chip-common.spec.ts` | 8,7 s | Case globale, cases par jeton, valeur commune, retour aux valeurs spécifiques, alerte de stock |
-| Aperçu local de cave | `e2e/chip-case-preview.spec.ts` | 6,4 s | Aperçu calculé avec les valeurs non enregistrées, avertissement d’obsolescence, enregistrement depuis le bas de page, suppression |
-| Valeur de cave réalisable | `e2e/tournament-buy-in.spec.ts` | 7,8 s | Champ vidable et réécrit, proposition issue du stock, application, distribution exacte |
+| Parcours organisateur complet | `e2e/tournament.spec.ts` | 35,3 s | Inscription, mallettes, tournoi avec PIN et déverrouillage, premier niveau distinct, capacité de rebuy, suivi local du tapis d’un joueur, jetons communs, joueurs, chrono, éliminations avec confirmation, clôture, classement, lien spectateur, lien invalide, suppression RGPD |
+| Saisie mobile | `e2e/mobile-layout.spec.ts` | 10,7 s | Valeurs et quantités lisibles, pas de débordement, suppression de compte |
+| Quantité commune de jetons | `e2e/chip-common.spec.ts` | 13,8 s | Case globale, cases par jeton, valeur commune, retour aux valeurs spécifiques, alerte de stock |
+| Aperçu local de cave | `e2e/chip-case-preview.spec.ts` | 10,4 s | Aperçu calculé avec les valeurs non enregistrées, avertissement d’obsolescence, enregistrement depuis le bas de page, suppression |
+| Valeur de cave réalisable | `e2e/tournament-buy-in.spec.ts` | 9,9 s | Champ vidable et réécrit, proposition issue du stock, application, distribution exacte |
 
 Adaptations rendues nécessaires par la refonte, sans modifier les attentes
 fonctionnelles :

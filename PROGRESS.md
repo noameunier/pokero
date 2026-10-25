@@ -110,6 +110,8 @@ revendiqués.
 - Contrastes mesurés ≥ 4,71:1 pour le texte courant ; suppression des 183
   classes de texte à opacité de la V1.
 - Captures avant/après dans `docs/ui/` (mobile, tablette, desktop + états).
+- Suivi local du tapis des joueurs depuis le lien spectateur, optionnel, sans
+  compte et sans synchronisation avec l’organisateur.
 - Aucun test sur appareil iOS/Android réel.
 
 ### Seed de démonstration (`apps/api/prisma/seed.ts`)
@@ -166,7 +168,7 @@ revendiqués.
 
 - `pg` signale un `client.query()` concurrent (avertissement de dépréciation
   provenant de la pile Prisma/adaptateur) ; aucune erreur fonctionnelle observée.
-- Bundle web principal ≈ 648 kB minifié (≈ 185 kB gzip) : découpage de code à
+- Bundle web principal ≈ 655 kB minifié (≈ 187 kB gzip) : découpage de code à
   prévoir.
 - Images Docker volumineuses (API ≈ 766 Mo, migrate ≈ 1,1 Go) : optimisation
   possible en séparant les dépendances de build et de migration.

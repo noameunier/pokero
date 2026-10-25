@@ -32,6 +32,7 @@ export interface SpectatorPayload {
     eliminationSequence: number | null;
   }>;
   display: { showRanking: boolean; showPlayers: boolean };
+  startingStack: number;
   ranking: Array<{ participantId: string; rank: number; displayName: string }> | null;
   activePlayers: number;
   serverNow: number;
@@ -105,6 +106,7 @@ export async function buildSpectatorPayload(
       showRanking: settings.display.showRanking,
       showPlayers: settings.display.showPlayers,
     },
+    startingStack: settings.buyIn.targetBuyIn,
     ranking,
     activePlayers: tournament.participants.filter((participant) => participant.status === 'ACTIVE').length,
     serverNow: now,

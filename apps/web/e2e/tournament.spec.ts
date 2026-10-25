@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+test.setTimeout(180_000);
+
 const stamp = Date.now().toString(36);
 const account = {
   displayName: `E2E ${stamp.slice(-4)}`,
@@ -93,6 +95,28 @@ test('parcours organisateur complet : compte, mallette, tournoi, spectateur, sup
   await expect(page.locator('.badge', { hasText: 'En cours' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Mettre en pause' })).toBeVisible();
 
+  // --- Suivi local du tapis d’un joueur --------------------------------
+  await page.getByRole('button', { name: 'Partage' }).click();
+  const liveShareDialog = page.getByRole('dialog', { name: 'Partage' });
+  await liveShareDialog.getByRole('button', { name: 'Créer un lien spectateur' }).click();
+  const liveSpectatorLink = await liveShareDialog
+    .locator('a[href*="/spectateur/"]')
+    .first()
+    .getAttribute('href');
+  await page.keyboard.press('Escape');
+  const trackerPage = await context.newPage();
+  await trackerPage.goto(liveSpectatorLink!);
+  await expect(trackerPage.getByText('Suivre mes jetons')).toBeVisible();
+  await trackerPage.locator('#player-tracker-name').selectOption({ label: 'Alice' });
+  await trackerPage.getByRole('button', { name: 'Suivre ce joueur' }).click();
+  await trackerPage.locator('#player-tracker-stack').fill('8500');
+  await trackerPage.getByRole('button', { name: 'Mettre à jour' }).click();
+  await expect(trackerPage.getByText('8 500').first()).toBeVisible();
+  await trackerPage.reload();
+  await expect(trackerPage.getByText('Suivre mes jetons')).toBeVisible();
+  await expect(trackerPage.locator('#player-tracker-stack')).toHaveValue('8500');
+  await trackerPage.close();
+
   // --- Éliminations jusqu'au vainqueur ---------------------------------
   const eliminateButtons = page.getByRole('button', { name: 'Éliminer' });
   await expect(eliminateButtons).toHaveCount(3);
@@ -113,19 +137,9 @@ test('parcours organisateur complet : compte, mallette, tournoi, spectateur, sup
   await page.getByRole('tab', { name: 'Classement' }).click();
   await expect(page.getByRole('heading', { name: 'Classement' })).toBeVisible();
 
-  // --- Lien spectateur ---------------------------------------------------
-  await page.getByRole('button', { name: 'Partage' }).click();
-  const shareDialog = page.getByRole('dialog', { name: 'Partage' });
-  await expect(shareDialog).toBeVisible();
-  await shareDialog.getByRole('button', { name: 'Créer un lien spectateur' }).click();
-
-  const spectatorLink = shareDialog.locator('a[href*="/spectateur/"]').first();
-  await expect(spectatorLink).toBeVisible();
-  const spectatorUrl = await spectatorLink.getAttribute('href');
-  expect(spectatorUrl).toBeTruthy();
-
+  // --- Lien spectateur (réutilise le lien créé pendant la partie) --------
   const spectator = await context.newPage();
-  await spectator.goto(spectatorUrl!);
+  await spectator.goto(liveSpectatorLink!);
   await expect(spectator.getByRole('heading', { name: tournamentName })).toBeVisible();
   await expect(spectator.getByText('Terminé', { exact: true })).toBeVisible();
   await expect(spectator.getByRole('heading', { name: 'Classement' })).toBeVisible();

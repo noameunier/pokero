@@ -9,6 +9,7 @@ import { useTournamentSocket } from '../lib/realtime';
 import type { SpectatorPayload } from '../lib/types';
 import { Badge } from '../components/ui';
 import { ClockProgress, useServerSyncedRemaining } from '../components/Clock';
+import { PlayerChipTracker } from '../components/PlayerChipTracker';
 
 export function SpectatorPage() {
   const { t } = useTranslation();
@@ -251,6 +252,15 @@ export function SpectatorPage() {
               )}
             </div>
           </section>
+        ) : null}
+
+        {isLive && payload.display.showPlayers && payload.participants.length > 0 ? (
+          <PlayerChipTracker
+            tournamentId={payload.tournament.id}
+            participants={payload.participants}
+            startingStack={payload.startingStack}
+            levelNumber={clock?.playLevelNumber ?? null}
+          />
         ) : null}
 
         {payload.display.showRanking && ranking && ranking.length > 0 ? (

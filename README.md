@@ -1,7 +1,7 @@
 # Pokero
 
 Gestion de tournois de poker pour organisateurs : caves, blindes, chronomètre
-serveur, classements, statistiques et liens spectateurs.
+serveur, classements, statistiques, liens spectateurs et suivi local des tapis.
 
 Production : <https://pokero.noameunier.fr>
 
@@ -165,7 +165,7 @@ temporaire avant d'agir en production.
 - Vérification d'email désactivée en production faute de SMTP réel.
 - Application mobile Capacitor non commencée ; aucune publication sur les stores
   n'est revendiquée.
-- Bundle web principal ≈ 648 kB minifié, ≈ 185 kB gzip (découpage à prévoir).
+- Bundle web principal ≈ 655 kB minifié, ≈ 187 kB gzip (découpage à prévoir).
 - Avertissement de dépréciation `pg` dans la pile Prisma (sans impact observé).
 - Pas de sauvegarde planifiée ni de supervision externe pour l'instant.
 - Aucun test sur appareil iOS/Android réel ni avec lecteur d'écran.
