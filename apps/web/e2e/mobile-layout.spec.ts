@@ -46,6 +46,7 @@ test('la saisie des valeurs et quantités reste lisible sur mobile', async ({ pa
 
   // Nettoyage : le compte de test ne doit pas rester en base.
   await page.goto('/compte');
+  await page.getByRole('tab', { name: 'Données' }).click();
   await page.getByRole('button', { name: 'Supprimer mon compte' }).click();
   const deleteForm = page.locator('form').filter({ has: page.getByPlaceholder('SUPPRIMER') });
   await deleteForm.locator('input[type="password"]').fill(account.password);

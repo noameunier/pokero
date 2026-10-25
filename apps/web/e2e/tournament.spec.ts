@@ -49,7 +49,7 @@ test('parcours organisateur complet : compte, mallette, tournoi, spectateur, sup
   // Étape caves : la distribution doit être calculable avec le stock de la mallette.
   await expect(page.getByText('Distribution des caves')).toBeVisible();
   await expect(page.getByText('Valeur exacte')).toBeVisible();
-  await expect(page.getByText('par joueur')).toBeVisible();
+  await expect(page.getByText('par joueur', { exact: true }).first()).toBeVisible();
   await page.getByRole('button', { name: 'Suivant' }).click();
 
   // Étape structure : la prévisualisation est générée côté client.
@@ -82,17 +82,19 @@ test('parcours organisateur complet : compte, mallette, tournoi, spectateur, sup
   await expect(eliminateButtons).toHaveCount(3);
 
   await eliminateButtons.first().click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Éliminer' }).click();
   await expect(page.getByText('Élimination enregistrée.')).toBeVisible();
   await expect(eliminateButtons).toHaveCount(2);
 
   await eliminateButtons.first().click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Éliminer' }).click();
   await expect(eliminateButtons).toHaveCount(1);
 
   // --- Clôture -----------------------------------------------------------
-  page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'Déclarer le vainqueur' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Clôturer' }).click();
   await expect(page.locator('.badge', { hasText: 'Terminé' })).toBeVisible();
-  await page.getByRole('button', { name: 'Classement' }).click();
+  await page.getByRole('tab', { name: 'Classement' }).click();
   await expect(page.getByRole('heading', { name: 'Classement' })).toBeVisible();
 
   // --- Lien spectateur ---------------------------------------------------
@@ -127,6 +129,7 @@ test('parcours organisateur complet : compte, mallette, tournoi, spectateur, sup
 
   // --- Suppression du compte (RGPD) ------------------------------------
   await page.goto('/compte');
+  await page.getByRole('tab', { name: 'Données' }).click();
   await page.getByRole('button', { name: 'Supprimer mon compte' }).click();
   const deleteForm = page.locator('form').filter({ has: page.getByPlaceholder('SUPPRIMER') });
   await deleteForm.locator('input[type="password"]').fill(account.password);

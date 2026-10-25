@@ -32,11 +32,31 @@ import {
   useApiErrorMessage,
   useStatusLabel,
 } from '../lib/format';
+import { QRCodeSVG } from 'qrcode.react';
 import { useTournamentSocket } from '../lib/realtime';
 import type { TournamentDetail } from '../lib/types';
 import { ClockFace, ClockProgress, useServerSyncedRemaining } from '../components/Clock';
-import { Badge, Button, Card, EmptyState, Field, Input, Modal, Tabs } from '../components/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  ConfirmDialog,
+  EmptyState,
+  Field,
+  Input,
+  Modal,
+  Switch,
+  Tabs,
+} from '../components/ui';
 import { useToast } from '../components/Toast';
+
+type ConfirmState = {
+  title: string;
+  description?: string;
+  confirmLabel?: string;
+  tone?: 'danger' | 'primary';
+  onConfirm: () => void;
+};
 
 const EVENT_LABELS: Record<string, string> = {
   TOURNAMENT_CREATED: 'Tournoi créé',
@@ -91,6 +111,7 @@ export function TournamentPage() {
   const [showSpectator, setShowSpectator] = useState(false);
   const [createdLink, setCreatedLink] = useState<string | null>(null);
   const [extraSeconds, setExtraSeconds] = useState('60');
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
 
   const detailQuery = useQuery({
     queryKey: ['tournament', id],
@@ -340,7 +361,7 @@ export function TournamentPage() {
   );
 
   if (detailQuery.isLoading) {
-    return <div className="py-24 text-center text-cream-300/60">{t('common.loading')}</div>;
+    return <div className="py-24 text-center text-cream-300">{t('common.loading')}</div>;
   }
 
   if (detailQuery.isError || !detail) {
@@ -379,43 +400,57 @@ export function TournamentPage() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <Link to="/" className="btn-ghost btn-sm p-2" aria-label={t('common.back')}>
-            <ArrowLeft className="size-5" />
+      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <Link
+            to="/"
+            className="btn-ghost btn-icon -ml-1 text-cream-300"
+            aria-label={t('common.back')}
+          >
+            <ArrowLeft className="size-5" aria-hidden />
           </Link>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="truncate font-display text-xl font-bold text-cream-50 sm:text-2xl">
+              <h1 className="truncate font-display text-[1.55rem] leading-tight text-cream-50 sm:text-[2rem]">
                 {tournament.name}
               </h1>
               <span className={`badge ${statusTone(tournament.status)}`}>
                 {statusLabel(tournament.status)}
               </span>
             </div>
-            <p className="mt-0.5 text-xs text-cream-300/60">
-              {tournament.settings?.chipCaseName ?? '—'} ·{' '}
-              {t('common.level')} {clock?.playLevelNumber ?? '—'} ·{' '}
-              {t('common.players')} {tournament.participants.length}
+            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11.5px] text-cream-400">
+              <span className="truncate">{tournament.settings?.chipCaseName ?? '—'}</span>
+              <span className="text-cream-500" aria-hidden>·</span>
+              <span>{t('common.level')} {clock?.playLevelNumber ?? '—'}</span>
+              <span className="text-cream-500" aria-hidden>·</span>
+              <span>{t('common.players')} {tournament.participants.length}</span>
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link to={`/projection/${id}`} className="btn-secondary btn-sm">
-            <Monitor className="size-4" />
+        <div className="flex w-full gap-2 sm:w-auto">
+          <Link
+            to={`/projection/${id}`}
+            className="btn-secondary btn-sm flex-1 sm:flex-none"
+          >
+            <Monitor className="size-3.5" aria-hidden />
             {t('tournament.projection')}
           </Link>
-          <Button variant="secondary" size="sm" onClick={() => setShowSpectator(true)}>
-            <Link2 className="size-4" />
+          <Button
+            variant="secondary"
+            size="sm"
+            className="flex-1 sm:flex-none"
+            onClick={() => setShowSpectator(true)}
+          >
+            <Link2 className="size-3.5" aria-hidden />
             {t('tournament.share')}
           </Button>
         </div>
       </header>
 
       {locked ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-400/30 bg-amber-950/25 px-4 py-3 text-sm text-amber-100">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] border border-warning-500/25 bg-warning-500/[0.08] px-4 py-3 text-sm text-warning-300">
           <span className="flex items-center gap-2">
-            <Lock className="size-4" />
+            <Lock className="size-4" aria-hidden />
             {t('tournament.pinRequired')}
           </span>
           <Button size="sm" variant="secondary" onClick={() => setPinModal(true)}>
@@ -423,84 +458,128 @@ export function TournamentPage() {
           </Button>
         </div>
       ) : tournament.pinRequired && pinToken ? (
-        <div className="flex items-center gap-2 text-xs text-emerald-300/80">
-          <LockOpen className="size-3.5" /> Tournoi déverrouillé
+        <div className="flex items-center gap-2 text-xs text-success-300">
+          <LockOpen className="size-3.5" aria-hidden /> Tournoi déverrouillé pour 30 minutes
         </div>
       ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-[1.55fr_1fr]">
-        <div className="space-y-5">
-          <Card className="overflow-hidden border-gold-500/20 bg-gradient-to-br from-felt-800/60 to-felt-950/40">
-            {clock ? (
-              <>
-                <ClockFace clock={clock} remainingMs={remaining} size="lg" />
-                <div className="mt-2">
-                  <ClockProgress clock={clock} remainingMs={remaining} />
-                </div>
-              </>
-            ) : (
-              <p className="py-10 text-center text-cream-300/60">Chronomètre indisponible.</p>
-            )}
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-5">
+          <section
+            className="card-command p-5 sm:p-6"
+            aria-label="Console du chronomètre"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-cream-400">
+                <span
+                  className={
+                    socket.connected
+                      ? 'live-dot'
+                      : 'size-1.5 rounded-full bg-warning-400'
+                  }
+                  aria-hidden
+                />
+                {socket.connected ? 'Chrono synchronisé' : 'Reconnexion…'}
+              </div>
+              <div className="flex items-center gap-2">
+                {tournament.pinRequired ? (
+                  <span className="inline-flex items-center gap-1 text-[10.5px] text-cream-400">
+                    <Lock className="size-3" aria-hidden />
+                    PIN
+                  </span>
+                ) : null}
+              </div>
+            </div>
 
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-              {canStart ? (
-                <Button
-                  disabled={disabled}
-                  loading={clockMutation.isPending}
-                  onClick={() => sendClock('START', { label: 'Tournoi démarré.' })}
-                >
-                  <Play className="size-4" fill="currentColor" />
-                  {t('tournament.start')}
-                </Button>
-              ) : null}
-              {canPause ? (
-                <Button
-                  variant="secondary"
-                  disabled={disabled}
-                  onClick={() => sendClock('PAUSE', { label: 'Chronomètre en pause.' })}
-                >
-                  <Pause className="size-4" />
-                  {t('tournament.pause')}
-                </Button>
-              ) : null}
-              {canResume ? (
-                <Button
-                  variant="secondary"
-                  disabled={disabled}
-                  onClick={() => sendClock('RESUME', { label: 'Chronomètre repris.' })}
-                >
-                  <Play className="size-4" />
-                  {t('tournament.resume')}
-                </Button>
-              ) : null}
-              {isOpen && !canStart ? (
+            <div className="mt-4">
+              {clock ? (
                 <>
+                  <ClockFace clock={clock} remainingMs={remaining} size="lg" />
+                  <div className="mt-4">
+                    <ClockProgress clock={clock} remainingMs={remaining} />
+                  </div>
+                </>
+              ) : (
+                <p className="py-12 text-center text-sm text-cream-400">
+                  Chronomètre indisponible.
+                </p>
+              )}
+            </div>
+
+            <div className="mt-5 space-y-2">
+              <div className="flex items-stretch gap-2">
+                {canStart ? (
                   <Button
-                    variant="secondary"
-                    size="sm"
+                    size="lg"
+                    className="flex-1"
                     disabled={disabled}
-                    onClick={() => sendClock('PREVIOUS', { label: 'Niveau précédent.' })}
+                    loading={clockMutation.isPending}
+                    onClick={() => sendClock('START', { label: 'Tournoi démarré.' })}
                   >
-                    <SkipBack className="size-4" />
-                    <span className="hidden sm:inline">{t('tournament.previousLevel')}</span>
+                    <Play className="size-4" fill="currentColor" aria-hidden />
+                    {t('tournament.start')}
                   </Button>
+                ) : null}
+                {canPause ? (
                   <Button
-                    variant="secondary"
-                    size="sm"
+                    size="lg"
+                    className="flex-1"
                     disabled={disabled}
-                    onClick={() => sendClock('NEXT', { label: 'Niveau suivant.' })}
+                    onClick={() => sendClock('PAUSE', { label: 'Chronomètre en pause.' })}
                   >
-                    <span className="hidden sm:inline">{t('tournament.nextLevel')}</span>
-                    <SkipForward className="size-4" />
+                    <Pause className="size-4" aria-hidden />
+                    {t('tournament.pause')}
                   </Button>
+                ) : null}
+                {canResume ? (
+                  <Button
+                    size="lg"
+                    className="flex-1"
+                    disabled={disabled}
+                    onClick={() => sendClock('RESUME', { label: 'Chronomètre repris.' })}
+                  >
+                    <Play className="size-4" aria-hidden />
+                    {t('tournament.resume')}
+                  </Button>
+                ) : null}
+                {isOpen && !canStart ? (
+                  <>
+                    <Button
+                      variant="secondary"
+                      className="btn-icon min-h-12"
+                      disabled={disabled}
+                      aria-label={t('tournament.previousLevel')}
+                      title={t('tournament.previousLevel')}
+                      onClick={() => sendClock('PREVIOUS', { label: 'Niveau précédent.' })}
+                    >
+                      <SkipBack className="size-4" aria-hidden />
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      className="btn-icon min-h-12"
+                      disabled={disabled}
+                      aria-label={t('tournament.nextLevel')}
+                      title={t('tournament.nextLevel')}
+                      onClick={() => sendClock('NEXT', { label: 'Niveau suivant.' })}
+                    >
+                      <SkipForward className="size-4" aria-hidden />
+                    </Button>
+                  </>
+                ) : null}
+              </div>
+
+              {isOpen && !canStart ? (
+                <div className="grid grid-cols-2 gap-2">
                   <Button
                     variant="secondary"
                     size="sm"
                     disabled={disabled}
-                    onClick={() => sendClock('ADD_TIME', { seconds: 60, label: 'Une minute ajoutée.' })}
+                    onClick={() =>
+                      sendClock('ADD_TIME', { seconds: 60, label: 'Une minute ajoutée.' })
+                    }
                   >
-                    <Timer className="size-4" />
-                    {t('tournament.addMinute')}
+                    <Timer className="size-3.5" aria-hidden />
+                    + 1 min
                   </Button>
                   <Button
                     variant="secondary"
@@ -510,69 +589,112 @@ export function TournamentPage() {
                       sendClock('ADD_TIME', { seconds: 300, label: 'Cinq minutes ajoutées.' })
                     }
                   >
-                    {t('tournament.addFiveMinutes')}
+                    + 5 min
                   </Button>
-                </>
+                </div>
               ) : null}
             </div>
 
-            {isOpen ? (
-              <div className="mt-3 flex flex-wrap items-center justify-center gap-2 border-t border-white/10 pt-3 text-xs">
-                <span className="text-cream-300/50">Ajuster le temps :</span>
-                <Input
-                  className="h-8 w-20 py-1 text-xs"
-                  type="number"
-                  value={extraSeconds}
-                  onChange={(event) => setExtraSeconds(event.target.value)}
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={disabled}
-                  onClick={() =>
-                    sendClock('SET_REMAINING', {
-                      seconds: Number(extraSeconds) || 0,
-                      label: 'Temps restant ajusté.',
-                    })
-                  }
-                >
-                  Définir
-                </Button>
-                <span className="mx-1 text-cream-300/30">|</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={disabled}
-                  onClick={() => sendClock('RECOVER', { recoveryMode: 'CONTINUE_ELAPSED', label: 'Chrono recalé sur le temps écoulé.' })}
-                >
-                  <RotateCcw className="size-3.5" />
-                  Temps écoulé
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={disabled}
-                  onClick={() => sendClock('RECOVER', { recoveryMode: 'LAST_CHECKPOINT', label: 'Chrono restauré au dernier point de contrôle.' })}
-                >
-                  Dernier checkpoint
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={disabled}
-                  onClick={() => sendClock('RECOVER', { recoveryMode: 'LAST_CHECKPOINT_PAUSED', label: 'Chrono restauré en pause.' })}
-                >
-                  Checkpoint + pause
-                </Button>
-              </div>
+            {isOpen && !canStart ? (
+              <details className="group mt-4 rounded-[var(--radius-md)] border border-white/[0.07] bg-night-950/40">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3.5 text-[12px] font-semibold text-cream-300 transition hover:text-cream-100">
+                  Ajustements avancés
+                  <span className="text-cream-500 transition-transform group-open:rotate-45" aria-hidden>
+                    +
+                  </span>
+                </summary>
+                <div className="space-y-4 border-t border-white/[0.06] p-3.5">
+                  <div className="flex flex-wrap items-end gap-2">
+                    <label className="min-w-0 flex-1">
+                      <span className="label">Temps restant (secondes)</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        inputMode="numeric"
+                        value={extraSeconds}
+                        onChange={(event) => setExtraSeconds(event.target.value)}
+                      />
+                    </label>
+                    <Button
+                      variant="secondary"
+                      disabled={disabled}
+                      onClick={() =>
+                        sendClock('SET_REMAINING', {
+                          seconds: Number(extraSeconds) || 0,
+                          label: 'Temps restant ajusté.',
+                        })
+                      }
+                    >
+                      Définir
+                    </Button>
+                  </div>
+                  <div>
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-cream-400">
+                      Récupération après interruption
+                    </p>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={disabled}
+                        onClick={() =>
+                          sendClock('RECOVER', {
+                            recoveryMode: 'CONTINUE_ELAPSED',
+                            label: 'Chrono recalé sur le temps écoulé.',
+                          })
+                        }
+                      >
+                        <RotateCcw className="size-3.5" aria-hidden />
+                        Temps écoulé
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={disabled}
+                        onClick={() =>
+                          sendClock('RECOVER', {
+                            recoveryMode: 'LAST_CHECKPOINT',
+                            label: 'Chrono restauré au dernier point de contrôle.',
+                          })
+                        }
+                      >
+                        Dernier checkpoint
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={disabled}
+                        onClick={() =>
+                          sendClock('RECOVER', {
+                            recoveryMode: 'LAST_CHECKPOINT_PAUSED',
+                            label: 'Chrono restauré en pause.',
+                          })
+                        }
+                      >
+                        Checkpoint + pause
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </details>
             ) : null}
-          </Card>
+
+            {canStart ? (
+              <p className="mt-3 text-center text-[11.5px] text-cream-400">
+                Le chrono est piloté par le serveur : tous les écrans connectés restent alignés.
+              </p>
+            ) : null}
+          </section>
 
           <Tabs<TabKey>
             value={tab}
             onChange={setTab}
             tabs={[
-              { value: 'players', label: t('tournament.players'), count: tournament.participants.length },
+              {
+                value: 'players',
+                label: t('tournament.players'),
+                count: tournament.participants.length,
+              },
               { value: 'structure', label: t('tournament.structure') },
               { value: 'ranking', label: t('tournament.ranking') },
               { value: 'history', label: t('tournament.history') },
@@ -580,10 +702,10 @@ export function TournamentPage() {
           />
 
           {tab === 'players' ? (
-            <Card>
+            <Card className="p-4 sm:p-5">
               {canManagePlayers ? (
                 <form
-                  className="mb-4 flex gap-2"
+                  className="mb-4 flex flex-col gap-2 sm:flex-row"
                   onSubmit={(event) => {
                     event.preventDefault();
                     if (!newPlayer.trim()) return;
@@ -594,10 +716,11 @@ export function TournamentPage() {
                     value={newPlayer}
                     maxLength={40}
                     placeholder={t('tournament.playerName')}
+                    aria-label={t('tournament.playerName')}
                     onChange={(event) => setNewPlayer(event.target.value)}
                   />
                   <Button type="submit" loading={addParticipantMutation.isPending}>
-                    <Plus className="size-4" />
+                    <Plus className="size-4" aria-hidden />
                     {t('tournament.addPlayer')}
                   </Button>
                 </form>
@@ -605,93 +728,141 @@ export function TournamentPage() {
 
               {orderedParticipants.length === 0 ? (
                 <EmptyState
-                  icon={<Users className="size-9" />}
+                  icon={<Users className="size-6" aria-hidden />}
                   title={t('tournament.noPlayers')}
                   description="Ajoutez les joueurs inscrits avant de démarrer le tournoi."
                 />
               ) : (
-                <ul className="space-y-2">
-                  {orderedParticipants.map((participant, index) => {
-                    const isEliminated = participant.status === 'ELIMINATED';
-                    return (
-                      <li
-                        key={participant.id}
-                        className={`flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2.5 ${
-                          isEliminated
-                            ? 'border-white/5 bg-white/[0.01] opacity-60'
-                            : 'border-white/10 bg-white/[0.03]'
-                        }`}
-                      >
-                        <span
-                          className={`grid size-7 shrink-0 place-items-center rounded-lg text-xs font-bold ${
-                            isEliminated
-                              ? 'bg-white/5 text-cream-300/40'
-                              : 'bg-gold-500/15 text-gold-300'
-                          }`}
-                        >
-                          {isEliminated ? participant.eliminationSequence : index + 1}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className={`block truncate text-sm font-medium ${isEliminated ? 'text-cream-300/60 line-through' : 'text-cream-50'}`}>
-                            {participant.displayName}
-                          </span>
-                          <span className="text-[11px] text-cream-300/50">
-                            {participant.rebuyCount > 0
-                              ? `${participant.rebuyCount} rebuy · `
-                              : ''}
-                            {participant.addOnCount > 0 ? `${participant.addOnCount} add-on · ` : ''}
-                            {isEliminated ? 'Éliminé' : 'En course'}
-                          </span>
-                        </span>
+                <div className="space-y-5">
+                  <div className="flex flex-wrap items-center gap-2 text-[11.5px]">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-success-500/25 bg-success-500/[0.08] px-2.5 py-1 text-success-300">
+                      <span className="size-1.5 rounded-full bg-success-400" aria-hidden />
+                      {activePlayers.length} en course
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.025] px-2.5 py-1 text-cream-400">
+                      {orderedParticipants.length - activePlayers.length} éliminé
+                      {orderedParticipants.length - activePlayers.length > 1 ? 's' : ''}
+                    </span>
+                  </div>
 
-                        {!isEliminated && canRecord ? (
-                          <>
-                            {tournament.settings?.rebuy.enabled ? (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                disabled={locked || rebuyMutation.isPending}
-                                onClick={() => rebuyMutation.mutate(participant.id)}
-                              >
-                                {t('tournament.rebuy')}
-                              </Button>
-                            ) : null}
-                            {tournament.settings?.addOn.enabled ? (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                disabled={locked || addOnMutation.isPending}
-                                onClick={() => addOnMutation.mutate(participant.id)}
-                              >
-                                {t('tournament.addOn')}
-                              </Button>
-                            ) : null}
-                            <Button
-                              variant="danger"
-                              size="sm"
-                              disabled={locked || eliminateMutation.isPending}
-                              onClick={() => eliminateMutation.mutate(participant.id)}
-                            >
-                              <UserMinus className="size-3.5" />
-                              {t('tournament.eliminate')}
-                            </Button>
-                          </>
-                        ) : null}
-
-                        {canManagePlayers ? (
-                          <button
-                            type="button"
-                            aria-label={t('common.delete')}
-                            onClick={() => removeParticipantMutation.mutate(participant.id)}
-                            className="grid size-8 place-items-center rounded-lg text-cream-300/40 hover:bg-red-500/10 hover:text-red-300"
+                  <section aria-label="Joueurs en course">
+                    <h3 className="section-title mb-2">
+                      En course · {activePlayers.length}
+                    </h3>
+                    <ul className="space-y-1.5">
+                      {orderedParticipants
+                        .filter((participant) => participant.status === 'ACTIVE')
+                        .map((participant, index) => (
+                          <li
+                            key={participant.id}
+                            className="flex flex-wrap items-center gap-2 rounded-[var(--radius-md)] border border-white/[0.07] bg-white/[0.022] px-3 py-2.5"
                           >
-                            <Trash2 className="size-4" />
-                          </button>
-                        ) : null}
-                      </li>
-                    );
-                  })}
-                </ul>
+                            <span className="grid size-8 shrink-0 place-items-center rounded-full border border-gold-500/20 bg-gold-500/[0.08] text-[11px] font-bold tabular text-gold-300">
+                              {index + 1}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-cream-100">
+                                {participant.displayName}
+                              </p>
+                              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-cream-400">
+                                <span className="inline-flex items-center gap-1 text-success-400">
+                                  <span className="size-1 rounded-full bg-success-400" aria-hidden />
+                                  En course
+                                </span>
+                                {participant.rebuyCount > 0 ? (
+                                  <span>{participant.rebuyCount} rebuy</span>
+                                ) : null}
+                                {participant.addOnCount > 0 ? (
+                                  <span>{participant.addOnCount} add-on</span>
+                                ) : null}
+                              </p>
+                            </div>
+
+                            {canRecord ? (
+                              <div className="flex w-full flex-wrap items-center justify-end gap-1.5 sm:w-auto">
+                                {tournament.settings?.rebuy.enabled ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    disabled={locked || rebuyMutation.isPending}
+                                    onClick={() => rebuyMutation.mutate(participant.id)}
+                                  >
+                                    {t('tournament.rebuy')}
+                                  </Button>
+                                ) : null}
+                                {tournament.settings?.addOn.enabled ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    disabled={locked || addOnMutation.isPending}
+                                    onClick={() => addOnMutation.mutate(participant.id)}
+                                  >
+                                    {t('tournament.addOn')}
+                                  </Button>
+                                ) : null}
+                                <Button
+                                  variant="danger"
+                                  size="sm"
+                                  disabled={locked || eliminateMutation.isPending}
+                                  onClick={() =>
+                                    setConfirmState({
+                                      title: `Éliminer ${participant.displayName} ?`,
+                                      description:
+                                        'Le joueur sera retiré de la table et son classement sera figé. L’action peut être annulée juste après.',
+                                      confirmLabel: 'Éliminer',
+                                      tone: 'danger',
+                                      onConfirm: () => eliminateMutation.mutate(participant.id),
+                                    })
+                                  }
+                                >
+                                  <UserMinus className="size-3.5" aria-hidden />
+                                  {t('tournament.eliminate')}
+                                </Button>
+                              </div>
+                            ) : null}
+
+                            {canManagePlayers ? (
+                              <button
+                                type="button"
+                                aria-label={`Retirer ${participant.displayName}`}
+                                onClick={() => removeParticipantMutation.mutate(participant.id)}
+                                className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-sm)] text-cream-400 transition hover:bg-danger-500/10 hover:text-danger-300 sm:size-9"
+                              >
+                                <Trash2 className="size-4" aria-hidden />
+                              </button>
+                            ) : null}
+                          </li>
+                        ))}
+                    </ul>
+                  </section>
+
+                  {orderedParticipants.filter((p) => p.status === 'ELIMINATED').length > 0 ? (
+                    <section aria-label="Joueurs éliminés">
+                      <h3 className="section-title mb-2">
+                        Éliminés ·{' '}
+                        {orderedParticipants.filter((p) => p.status === 'ELIMINATED').length}
+                      </h3>
+                      <ul className="space-y-1">
+                        {orderedParticipants
+                          .filter((participant) => participant.status === 'ELIMINATED')
+                          .map((participant) => (
+                            <li
+                              key={participant.id}
+                              className="flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-sm text-cream-400"
+                            >
+                              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-white/[0.035] text-[11px] font-semibold tabular text-cream-400">
+                                {participant.eliminationSequence}
+                              </span>
+                              <span className="min-w-0 flex-1 truncate line-through decoration-cream-500/50">
+                                {participant.displayName}
+                              </span>
+                              <span className="text-[11px] text-cream-500">Éliminé</span>
+                            </li>
+                          ))}
+                      </ul>
+                    </section>
+                  ) : null}
+                </div>
               )}
 
               {canRecord && lastElimination ? (
@@ -702,7 +873,7 @@ export function TournamentPage() {
                   disabled={locked || undoEliminationMutation.isPending}
                   onClick={() => undoEliminationMutation.mutate(lastElimination.participantId)}
                 >
-                  <RotateCcw className="size-3.5" />
+                  <RotateCcw className="size-3.5" aria-hidden />
                   {t('tournament.undoElimination')} ({participantName(lastElimination.participantId)})
                 </Button>
               ) : null}
@@ -710,51 +881,65 @@ export function TournamentPage() {
           ) : null}
 
           {tab === 'structure' ? (
-            <Card>
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-cream-50">{t('tournament.structure')}</h2>
-                <span className="text-xs text-cream-300/50">
-                  {tournament.levels.filter((level) => level.kind === 'PLAY').length} niveaux
+            <Card className="overflow-hidden p-0">
+              <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-4 sm:px-5">
+                <h2 className="font-display text-xl text-cream-50">{t('tournament.structure')}</h2>
+                <span className="text-[11px] text-cream-400">
+                  {tournament.levels.filter((level) => level.kind === 'PLAY').length} niveaux de jeu
                 </span>
               </div>
-              <div className="mt-3 overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="text-left text-[10px] uppercase tracking-wider text-cream-300/50">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[440px] text-sm">
+                  <thead className="border-y border-white/[0.06] bg-white/[0.015] text-left text-[9.5px] font-bold uppercase tracking-[0.14em] text-cream-400">
                     <tr>
-                      <th className="px-2 py-2">#</th>
-                      <th className="px-2 py-2">SB</th>
-                      <th className="px-2 py-2">BB</th>
-                      <th className="px-2 py-2">Ante</th>
-                      <th className="px-2 py-2">Durée</th>
+                      <th className="px-4 py-2.5 font-semibold">#</th>
+                      <th className="px-3 py-2.5 font-semibold">Petite</th>
+                      <th className="px-3 py-2.5 font-semibold">Grosse</th>
+                      <th className="px-3 py-2.5 font-semibold">Ante</th>
+                      <th className="px-4 py-2.5 text-right font-semibold">Durée</th>
                     </tr>
                   </thead>
                   <tbody>
                     {tournament.levels.map((level, index) => {
                       const isCurrent = clock?.levelPosition === level.position;
+                      const isBreak = level.kind === 'BREAK';
                       return (
                         <tr
                           key={level.id ?? index}
-                          className={`border-t border-white/5 ${
-                            isCurrent ? 'bg-gold-500/10 text-gold-200' : 'text-cream-200/80'
+                          className={`border-b border-white/[0.04] last:border-0 ${
+                            isCurrent
+                              ? 'bg-gold-500/[0.07] text-gold-200'
+                              : isBreak
+                                ? 'bg-white/[0.012] text-cream-400'
+                                : 'text-cream-200'
                           }`}
                         >
-                          <td className="px-2 py-1.5">{level.position}</td>
-                          <td className="px-2 py-1.5 tabular">
-                            {level.kind === 'BREAK' ? (
-                              <span className="inline-flex items-center gap-1 text-cream-300/60">
-                                <Coffee className="size-3.5" /> Pause
+                          <td className="px-4 py-2.5">
+                            <span className="inline-flex items-center gap-2">
+                              {isCurrent ? (
+                                <span className="size-1.5 rounded-full bg-gold-500" aria-hidden />
+                              ) : null}
+                              <span className="tabular">{level.position}</span>
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 tabular">
+                            {isBreak ? (
+                              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-cream-400">
+                                <Coffee className="size-3.5" aria-hidden /> Pause
                               </span>
                             ) : (
                               formatChips(level.smallBlind)
                             )}
                           </td>
-                          <td className="px-2 py-1.5 tabular">
-                            {level.kind === 'BREAK' ? '—' : formatChips(level.bigBlind)}
+                          <td className="px-3 py-2.5 tabular font-semibold">
+                            {isBreak ? '—' : formatChips(level.bigBlind)}
                           </td>
-                          <td className="px-2 py-1.5 tabular">
+                          <td className="px-3 py-2.5 tabular text-cream-400">
                             {level.ante ? formatChips(level.ante) : '—'}
                           </td>
-                          <td className="px-2 py-1.5">{level.durationMinutes} min</td>
+                          <td className="px-4 py-2.5 text-right text-cream-400">
+                            {level.durationMinutes} min
+                          </td>
                         </tr>
                       );
                     })}
@@ -765,77 +950,116 @@ export function TournamentPage() {
           ) : null}
 
           {tab === 'ranking' ? (
-            <Card>
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-cream-50">{t('tournament.ranking')}</h2>
+            <Card className="p-4 sm:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="font-display text-xl text-cream-50">{t('tournament.ranking')}</h2>
                 <Badge tone={tournament.publicRanking ? 'gold' : 'neutral'}>
                   {tournament.publicRanking ? 'Public' : 'Privé'}
                 </Badge>
               </div>
+
               {detail.ranking && detail.ranking.entries.length > 0 ? (
-                <ol className="mt-3 space-y-1.5">
-                  {detail.ranking.entries.map((entry) => (
-                    <li
-                      key={entry.participantId}
-                      className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${
-                        entry.rank === 1
-                          ? 'bg-gold-500/10 text-gold-200'
-                          : 'bg-white/[0.02] text-cream-200/80'
-                      }`}
-                    >
-                      <span className="w-6 text-center font-bold tabular">
-                        {entry.rank === 1 ? <Trophy className="mx-auto size-4" /> : entry.rank}
-                      </span>
-                      <span className="flex-1 truncate">
-                        {participantName(entry.participantId)}
-                      </span>
-                      {entry.eliminated ? (
-                        <span className="text-xs text-cream-300/40">éliminé</span>
-                      ) : (
-                        <span className="text-xs text-emerald-300/70">en course</span>
-                      )}
-                    </li>
-                  ))}
-                </ol>
+                <>
+                  <div className="mt-4 grid grid-cols-3 gap-2">
+                    {detail.ranking.entries.slice(0, 3).map((entry) => (
+                      <div
+                        key={entry.participantId}
+                        className={`rounded-[var(--radius-md)] border p-3 text-center ${
+                          entry.rank === 1
+                            ? 'border-gold-500/30 bg-gold-500/[0.07]'
+                            : 'border-white/[0.06] bg-white/[0.02]'
+                        }`}
+                      >
+                        <div
+                          className={`mx-auto grid size-7 place-items-center rounded-full text-[11px] font-bold ${
+                            entry.rank === 1
+                              ? 'bg-gold-500 text-night-950'
+                              : 'bg-white/[0.06] text-cream-300'
+                          }`}
+                        >
+                          {entry.rank}
+                          {entry.tied ? '=' : ''}
+                        </div>
+                        <p className="mt-2 truncate text-[12px] font-semibold text-cream-100">
+                          {participantName(entry.participantId)}
+                        </p>
+                        <p className="mt-0.5 text-[10px] text-cream-400">
+                          {entry.eliminated ? 'Éliminé' : 'En course'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <ol className="mt-3 space-y-1">
+                    {detail.ranking.entries.slice(3).map((entry) => (
+                      <li
+                        key={entry.participantId}
+                        className="flex items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2 text-sm text-cream-300 hover:bg-white/[0.02]"
+                      >
+                        <span className="w-6 text-center font-bold tabular text-cream-500">
+                          {entry.rank}
+                          {entry.tied ? '=' : ''}
+                        </span>
+                        <span className="flex-1 truncate">
+                          {participantName(entry.participantId)}
+                        </span>
+                        <span className="text-[11px] text-cream-500">
+                          {entry.eliminated ? 'éliminé' : 'en course'}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                  {detail.ranking.entries.some((entry) => entry.tied) ? (
+                    <p className="mt-2 text-[11px] text-cream-500">
+                      « = » signale les joueurs ex æquo, classés au même rang.
+                    </p>
+                  ) : null}
+                </>
               ) : (
-                <p className="mt-3 text-sm text-cream-300/60">
+                <p className="mt-4 text-sm text-cream-400">
                   Le classement se construit au fil des éliminations.
                 </p>
               )}
 
-              <div className="mt-4 border-t border-white/10 pt-4">
-                <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
-                  <span className="text-cream-200">Rendre le classement public</span>
-                  <input
-                    type="checkbox"
-                    checked={tournament.publicRanking}
-                    onChange={(event) => publicRankingMutation.mutate(event.target.checked)}
-                    className="size-4 accent-gold-500"
-                  />
-                </label>
+              <div className="mt-4 border-t border-white/[0.06] pt-4">
+                <Switch
+                  label="Rendre le classement public"
+                  hint="Visible depuis le lien spectateur."
+                  checked={tournament.publicRanking}
+                  onChange={(value) => publicRankingMutation.mutate(value)}
+                />
               </div>
             </Card>
           ) : null}
 
           {tab === 'history' ? (
-            <Card>
-              <h2 className="text-lg font-semibold text-cream-50">{t('tournament.history')}</h2>
-              <ol className="mt-3 space-y-2">
+            <Card className="p-4 sm:p-5">
+              <h2 className="font-display text-xl text-cream-50">{t('tournament.history')}</h2>
+              <ol className="mt-4 space-y-0">
                 {detail.events.length === 0 ? (
-                  <p className="text-sm text-cream-300/60">Aucun événement.</p>
+                  <p className="text-sm text-cream-400">Aucun événement.</p>
                 ) : (
-                  detail.events.map((event) => (
-                    <li key={event.id} className="flex items-start gap-3 text-sm">
-                      <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-gold-500/60" />
-                      <span className="flex-1">
-                        <span className="text-cream-200">
+                  detail.events.map((event, index) => (
+                    <li key={event.id} className="flex gap-3">
+                      <div className="flex flex-col items-center">
+                        <span
+                          className={`mt-1.5 size-2 shrink-0 rounded-full ${
+                            index === 0 ? 'bg-gold-500' : 'bg-white/15'
+                          }`}
+                          aria-hidden
+                        />
+                        {index < detail.events.length - 1 ? (
+                          <span className="w-px flex-1 bg-white/[0.06]" aria-hidden />
+                        ) : null}
+                      </div>
+                      <div className="min-w-0 flex-1 pb-4">
+                        <p className="text-sm text-cream-200">
                           {EVENT_LABELS[event.type] ?? event.type}
-                        </span>
-                        <span className="ml-2 text-xs text-cream-300/40">
-                          {formatDate(event.createdAt)}
-                        </span>
-                      </span>
-                      <span className="text-xs text-cream-300/30">v{event.version}</span>
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-cream-500">
+                          {formatDate(event.createdAt)} · v{event.version}
+                        </p>
+                      </div>
                     </li>
                   ))
                 )}
@@ -844,65 +1068,65 @@ export function TournamentPage() {
           ) : null}
         </div>
 
-        <div className="space-y-5">
-          <Card>
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-cream-300/60">
-              Informations
-            </h2>
-            <dl className="mt-3 space-y-2 text-sm">
-              <div className="flex justify-between gap-3">
-                <dt className="text-cream-300/60">Cave</dt>
-                <dd className="tabular font-semibold text-cream-50">
-                  {formatChips(tournament.settings?.buyIn.targetBuyIn)}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-cream-300/60">Joueurs</dt>
-                <dd className="tabular text-cream-100">
-                  {activePlayers.length} / {tournament.participants.length}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-cream-300/60">Rebuys</dt>
-                <dd className="tabular text-cream-100">
-                  {detail.rebuys.filter((rebuy) => !rebuy.cancelledAt).length}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-cream-300/60">Démarrage</dt>
-                <dd className="text-cream-100">{formatDate(tournament.startedAt)}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-cream-300/60">Fin</dt>
-                <dd className="text-cream-100">{formatDate(tournament.completedAt)}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-cream-300/60">Version chrono</dt>
-                <dd className="tabular text-cream-100">v{clock?.version ?? 0}</dd>
-              </div>
+        <div className="min-w-0 space-y-4">
+          <Card className="p-4 sm:p-5">
+            <h2 className="section-title">Informations</h2>
+            <dl className="mt-3 divide-y divide-white/[0.05] text-sm">
+              {[
+                {
+                  label: 'Cave',
+                  value: formatChips(tournament.settings?.buyIn.targetBuyIn),
+                  mono: true,
+                },
+                {
+                  label: 'Joueurs',
+                  value: `${activePlayers.length} / ${tournament.participants.length}`,
+                  mono: true,
+                },
+                {
+                  label: 'Rebuys',
+                  value: detail.rebuys.filter((rebuy) => !rebuy.cancelledAt).length,
+                  mono: true,
+                },
+                { label: 'Démarrage', value: formatDate(tournament.startedAt) },
+                { label: 'Fin', value: formatDate(tournament.completedAt) },
+                { label: 'Version chrono', value: `v${clock?.version ?? 0}`, mono: true },
+              ].map((row) => (
+                <div key={row.label} className="flex items-start justify-between gap-3 py-2">
+                  <dt className="text-cream-400">{row.label}</dt>
+                  <dd
+                    className={`text-right font-medium text-cream-100 ${
+                      row.mono ? 'tabular' : ''
+                    }`}
+                  >
+                    {row.value}
+                  </dd>
+                </div>
+              ))}
             </dl>
           </Card>
 
-          <Card>
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-cream-300/60">
-              Actions
-            </h2>
+          <Card className="p-4 sm:p-5">
+            <h2 className="section-title">Actions</h2>
             <div className="mt-3 space-y-2">
               {!isFinished ? (
                 <Button
                   className="w-full"
                   disabled={locked || finalizeMutation.isPending || activePlayers.length !== 1}
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        `Déclarer ${activePlayers[0]?.displayName ?? 'le dernier joueur'} vainqueur et clôturer ?`,
-                      )
-                    ) {
-                      finalizeMutation.mutate();
-                    }
-                  }}
+                  loading={finalizeMutation.isPending}
+                  onClick={() =>
+                    setConfirmState({
+                      title: 'Clôturer le tournoi ?',
+                      description: `Déclarer ${
+                        activePlayers[0]?.displayName ?? 'le dernier joueur'
+                      } vainqueur et enregistrer le classement final.`,
+                      confirmLabel: 'Clôturer',
+                      tone: 'primary',
+                      onConfirm: () => finalizeMutation.mutate(),
+                    })
+                  }
                 >
-                  <CheckCircle2 className="size-4" />
+                  <CheckCircle2 className="size-4" aria-hidden />
                   {t('tournament.finalize')}
                 </Button>
               ) : null}
@@ -911,47 +1135,60 @@ export function TournamentPage() {
                   variant="secondary"
                   className="w-full"
                   disabled={locked || clockMutation.isPending}
-                  onClick={() => {
-                    if (window.confirm('Annuler ce tournoi ? Les réservations seront libérées.')) {
-                      sendClock('CANCEL', { label: 'Tournoi annulé.' });
-                    }
-                  }}
+                  onClick={() =>
+                    setConfirmState({
+                      title: 'Annuler ce tournoi ?',
+                      description:
+                        'Les réservations de jetons seront libérées. Cette action ne peut pas être annulée.',
+                      confirmLabel: 'Annuler le tournoi',
+                      tone: 'danger',
+                      onConfirm: () =>
+                        sendClock('CANCEL', { label: 'Tournoi annulé.' }),
+                    })
+                  }
                 >
-                  <XCircle className="size-4" />
+                  <XCircle className="size-4" aria-hidden />
                   {t('tournament.cancelTournament')}
                 </Button>
               ) : null}
-              {tournament.status === 'COMPLETED' || tournament.status === 'CANCELLED' || tournament.status === 'DRAFT' ? (
+              {tournament.status === 'COMPLETED' ||
+              tournament.status === 'CANCELLED' ||
+              tournament.status === 'DRAFT' ? (
                 <Button
                   variant="danger"
                   className="w-full"
                   loading={deleteMutation.isPending}
-                  onClick={() => {
-                    if (window.confirm('Supprimer définitivement ce tournoi ?')) {
-                      deleteMutation.mutate();
-                    }
-                  }}
+                  onClick={() =>
+                    setConfirmState({
+                      title: 'Supprimer définitivement ce tournoi ?',
+                      description:
+                        'Le tournoi, ses participants et son historique seront supprimés. Cette action est irréversible.',
+                      confirmLabel: 'Supprimer',
+                      tone: 'danger',
+                      onConfirm: () => deleteMutation.mutate(),
+                    })
+                  }
                 >
-                  <Trash2 className="size-4" />
+                  <Trash2 className="size-4" aria-hidden />
                   {t('common.delete')}
                 </Button>
               ) : null}
               {activePlayers.length !== 1 && !isFinished ? (
-                <p className="text-xs text-cream-300/50">
+                <p className="text-[11.5px] leading-relaxed text-cream-400">
                   Il doit rester exactement un joueur en course pour clôturer.
                 </p>
               ) : null}
             </div>
           </Card>
 
-          <Card>
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-cream-300/60">
-                Spectateurs
-              </h2>
-              <Link2 className="size-4 text-gold-500/60" />
+          <Card className="p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="section-title">Spectateurs</h2>
+              <Link2 className="size-4 text-gold-500" aria-hidden />
             </div>
-            <p className="mt-2 text-xs text-cream-300/60">{t('tournament.spectatorHint')}</p>
+            <p className="mt-2 text-[11.5px] leading-relaxed text-cream-400">
+              {t('tournament.spectatorHint')}
+            </p>
             <Button
               variant="secondary"
               size="sm"
@@ -959,13 +1196,15 @@ export function TournamentPage() {
               loading={spectatorMutation.isPending}
               onClick={() => spectatorMutation.mutate()}
             >
-              <Plus className="size-4" />
+              <Plus className="size-3.5" aria-hidden />
               {t('tournament.createSpectatorLink')}
             </Button>
             {createdLink ? (
-              <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-2.5">
-                <p className="break-all text-xs text-cream-200">{createdLink}</p>
-                <div className="mt-2 flex gap-2">
+              <div className="mt-3 rounded-[var(--radius-md)] border border-gold-500/20 bg-gold-500/[0.05] p-2.5">
+                <p className="break-all text-[11px] leading-relaxed text-cream-200">
+                  {createdLink}
+                </p>
+                <div className="mt-2 flex gap-1.5">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -974,7 +1213,7 @@ export function TournamentPage() {
                       notify(t('common.copied'));
                     }}
                   >
-                    <Copy className="size-3.5" />
+                    <Copy className="size-3.5" aria-hidden />
                     {t('common.copy')}
                   </Button>
                   <a
@@ -989,17 +1228,19 @@ export function TournamentPage() {
               </div>
             ) : null}
             {detail.spectatorTokens.length > 0 ? (
-              <ul className="mt-3 space-y-1.5">
+              <ul className="mt-3 space-y-1">
                 {detail.spectatorTokens.map((token) => (
                   <li
                     key={token.id}
-                    className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5 text-xs"
+                    className="flex items-center gap-2 rounded-[var(--radius-sm)] bg-white/[0.025] px-2.5 py-1.5 text-[11px]"
                   >
-                    <span className="flex-1 text-cream-300/70">{formatDate(token.createdAt)}</span>
+                    <span className="flex-1 text-cream-400">
+                      {formatDate(token.createdAt)}
+                    </span>
                     <button
                       type="button"
                       onClick={() => revokeTokenMutation.mutate(token.id)}
-                      className="text-red-300/70 hover:text-red-200"
+                      className="font-semibold text-danger-300 hover:text-danger-300"
                     >
                       {t('tournament.revoke')}
                     </button>
@@ -1007,33 +1248,32 @@ export function TournamentPage() {
                 ))}
               </ul>
             ) : (
-              <p className="mt-2 text-xs text-cream-300/40">Aucun lien actif.</p>
+              <p className="mt-2 text-[11px] text-cream-500">Aucun lien actif.</p>
             )}
           </Card>
 
-          <Card>
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-cream-300/60">
-              Diffusion
-            </h2>
-            <p className="mt-2 text-xs text-cream-300/60">
-              Ouvrez l’écran de projection sur un second écran ou une TV. Le chronomètre reste
-              synchronisé au serveur.
+          <Card className="p-4 sm:p-5">
+            <h2 className="section-title">Diffusion</h2>
+            <p className="mt-2 text-[11.5px] leading-relaxed text-cream-400">
+              Ouvrez la projection sur un second écran ou une TV. Le chronomètre reste synchronisé
+              au serveur.
             </p>
             <Link to={`/projection/${id}`} className="btn-primary btn-sm mt-3 w-full">
-              <Monitor className="size-4" />
+              <Monitor className="size-3.5" aria-hidden />
               {t('tournament.projection')}
             </Link>
-            <div className="mt-3 flex items-center justify-between text-xs text-cream-300/60">
+            <div className="mt-3 flex items-center justify-between text-[11px] text-cream-400">
               <span>Connexion temps réel</span>
               <span
                 className={`inline-flex items-center gap-1.5 ${
-                  socket.connected ? 'text-emerald-300' : 'text-amber-300'
+                  socket.connected ? 'text-success-300' : 'text-warning-300'
                 }`}
               >
                 <span
                   className={`size-1.5 rounded-full ${
-                    socket.connected ? 'bg-emerald-400' : 'bg-amber-400'
+                    socket.connected ? 'bg-success-400' : 'bg-warning-400 animate-live'
                   }`}
+                  aria-hidden
                 />
                 {socket.connected ? 'Active' : 'Reconnexion…'}
               </span>
@@ -1046,6 +1286,7 @@ export function TournamentPage() {
         open={pinModal}
         onClose={() => setPinModal(false)}
         title={t('tournament.unlock')}
+        description="Le déverrouillage dure 30 minutes sur cet appareil."
         footer={
           <>
             <Button variant="ghost" onClick={() => setPinModal(false)}>
@@ -1061,7 +1302,7 @@ export function TournamentPage() {
           </>
         }
       >
-        <Field label={t('tournament.pin')} hint="Le déverrouillage dure 30 minutes.">
+        <Field label={t('tournament.pin')}>
           <Input
             inputMode="numeric"
             pattern="\d{4,8}"
@@ -1082,47 +1323,59 @@ export function TournamentPage() {
         open={showSpectator}
         onClose={() => setShowSpectator(false)}
         title={t('tournament.share')}
+        description="Partagez ce lien en lecture seule avec les joueurs et les spectateurs."
         wide
       >
         <div className="space-y-4">
-          <p className="text-sm text-cream-300/70">{t('tournament.spectatorHint')}</p>
           {createdLink ? (
-            <div className="rounded-xl border border-gold-500/30 bg-gold-500/5 p-3">
-              <p className="break-all text-sm text-cream-100">{createdLink}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    void navigator.clipboard.writeText(createdLink);
-                    notify(t('common.copied'));
-                  }}
-                >
-                  <Copy className="size-4" />
-                  {t('common.copy')}
-                </Button>
-                <a href={createdLink} target="_blank" rel="noreferrer" className="btn-secondary btn-sm">
-                  Ouvrir l’aperçu
-                </a>
+            <div className="rounded-[var(--radius-md)] border border-gold-500/25 bg-gold-500/[0.05] p-3">
+              <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+                <div className="shrink-0 rounded-[var(--radius-sm)] bg-white p-2">
+                  <QRCodeSVG value={createdLink} size={104} level="M" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="break-all text-[12px] leading-relaxed text-cream-100">
+                    {createdLink}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        void navigator.clipboard.writeText(createdLink);
+                        notify(t('common.copied'));
+                      }}
+                    >
+                      <Copy className="size-3.5" aria-hidden />
+                      {t('common.copy')}
+                    </Button>
+                    <a
+                      href={createdLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-secondary btn-sm"
+                    >
+                      Ouvrir l’aperçu
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
             <Button loading={spectatorMutation.isPending} onClick={() => spectatorMutation.mutate()}>
-              <Plus className="size-4" />
+              <Plus className="size-4" aria-hidden />
               {t('tournament.createSpectatorLink')}
             </Button>
           )}
           {detail.spectatorTokens.length > 0 ? (
             <div>
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-cream-300/50">
-                Liens actifs
-              </h3>
+              <h3 className="section-title mb-2">Liens actifs</h3>
               <ul className="space-y-1.5">
                 {detail.spectatorTokens.map((token) => (
                   <li
                     key={token.id}
-                    className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.03] px-3 py-2 text-sm"
+                    className="flex items-center justify-between gap-2 rounded-[var(--radius-sm)] bg-white/[0.025] px-3 py-2 text-sm"
                   >
-                    <span className="text-cream-300/70">Créé le {formatDate(token.createdAt)}</span>
+                    <span className="text-cream-400">Créé le {formatDate(token.createdAt)}</span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1133,7 +1386,7 @@ export function TournamentPage() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-2 text-xs text-cream-300/40">
+              <p className="mt-2 text-[11px] leading-relaxed text-cream-500">
                 Pour des raisons de sécurité, les liens existants ne peuvent plus être affichés.
                 Créez-en un nouveau si nécessaire.
               </p>
@@ -1141,6 +1394,19 @@ export function TournamentPage() {
           ) : null}
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmState !== null}
+        title={confirmState?.title ?? ''}
+        description={confirmState?.description}
+        confirmLabel={confirmState?.confirmLabel}
+        tone={confirmState?.tone}
+        onClose={() => setConfirmState(null)}
+        onConfirm={() => {
+          confirmState?.onConfirm();
+          setConfirmState(null);
+        }}
+      />
     </div>
   );
 }

@@ -26,6 +26,24 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 
 let nextId = 1;
 
+const kindStyles: Record<ToastKind, { icon: typeof Info; box: string; iconColor: string }> = {
+  success: {
+    icon: CheckCircle2,
+    box: 'border-success-500/25 bg-night-800',
+    iconColor: 'text-success-400',
+  },
+  error: {
+    icon: TriangleAlert,
+    box: 'border-danger-500/30 bg-night-800',
+    iconColor: 'text-danger-400',
+  },
+  info: {
+    icon: Info,
+    box: 'border-white/[0.1] bg-night-800',
+    iconColor: 'text-gold-400',
+  },
+};
+
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -37,7 +55,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     (message: string, kind: ToastKind = 'info') => {
       const id = nextId++;
       setToasts((current) => [...current.slice(-3), { id, kind, message }]);
-      window.setTimeout(() => remove(id), 5000);
+      window.setTimeout(() => remove(id), 5200);
     },
     [remove],
   );
@@ -55,38 +73,32 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
       <div
-        className="pointer-events-none fixed inset-x-0 bottom-20 z-[100] flex flex-col items-center gap-2 px-4 sm:bottom-6"
+        className="pointer-events-none fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-[100] flex flex-col items-center gap-2 px-4 md:bottom-6"
         aria-live="polite"
+        aria-atomic="false"
       >
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border px-4 py-3 text-sm shadow-2xl backdrop-blur-md animate-rise ${
-              toast.kind === 'success'
-                ? 'border-emerald-400/30 bg-emerald-950/90 text-emerald-50'
-                : toast.kind === 'error'
-                  ? 'border-red-400/30 bg-red-950/90 text-red-50'
-                  : 'border-white/15 bg-felt-900/95 text-cream-100'
-            }`}
-          >
-            {toast.kind === 'success' ? (
-              <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
-            ) : toast.kind === 'error' ? (
-              <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-            ) : (
-              <Info className="mt-0.5 size-4 shrink-0" />
-            )}
-            <span className="flex-1">{toast.message}</span>
-            <button
-              type="button"
-              onClick={() => remove(toast.id)}
-              className="rounded p-0.5 opacity-60 hover:opacity-100"
-              aria-label="Fermer"
+        {toasts.map((toast) => {
+          const style = kindStyles[toast.kind];
+          const Icon = style.icon;
+          return (
+            <div
+              key={toast.id}
+              role={toast.kind === 'error' ? 'alert' : 'status'}
+              className={`pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-[var(--radius-md)] border px-3.5 py-3 text-sm text-cream-100 shadow-lifted animate-rise ${style.box}`}
             >
-              <X className="size-4" />
-            </button>
-          </div>
-        ))}
+              <Icon className={`mt-0.5 size-4.5 shrink-0 ${style.iconColor}`} aria-hidden />
+              <span className="flex-1 leading-snug">{toast.message}</span>
+              <button
+                type="button"
+                onClick={() => remove(toast.id)}
+                className="relative grid size-6 shrink-0 place-items-center rounded-full text-cream-400 transition after:absolute after:-inset-2.5 after:content-[''] hover:bg-white/[0.08] hover:text-cream-100"
+                aria-label="Fermer la notification"
+              >
+                <X className="size-3.5" aria-hidden />
+              </button>
+            </div>
+          );
+        })}
       </div>
     </ToastContext.Provider>
   );

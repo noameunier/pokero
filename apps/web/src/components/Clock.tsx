@@ -31,7 +31,9 @@ export function useLevelChime(
   const unlock = () => {
     if (typeof window === 'undefined') return;
     if (!contextRef.current) {
-      const AudioContextClass = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      const AudioContextClass =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (AudioContextClass) contextRef.current = new AudioContextClass();
     }
     void contextRef.current?.resume();
@@ -65,77 +67,114 @@ export function useLevelChime(
   return unlock;
 }
 
+const digitSizes = {
+  sm: 'text-[2.35rem]',
+  md: 'text-[clamp(3.2rem,9vw,4.4rem)]',
+  lg: 'text-[clamp(4rem,13vw,8.5rem)]',
+  xl: 'text-[clamp(5rem,18vw,14rem)]',
+} as const;
+
 export function ClockFace({
   clock,
   remainingMs,
   size = 'md',
   compact = false,
+  showUpcoming = true,
 }: {
   clock: ClockView;
   remainingMs: number;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   compact?: boolean;
+  showUpcoming?: boolean;
 }) {
   const { t } = useTranslation();
   const isBreak = clock.kind === 'BREAK';
   const urgent = remainingMs <= 60_000 && clock.status === 'RUNNING';
-  const digits =
-    size === 'xl'
-      ? 'text-[clamp(3.5rem,16vw,11rem)]'
-      : size === 'lg'
-        ? 'text-[clamp(3rem,11vw,7rem)]'
-        : size === 'md'
-          ? 'text-5xl sm:text-6xl'
-          : 'text-3xl';
+  const paused = clock.status === 'PAUSED';
 
   return (
-    <div className={`text-center ${compact ? '' : 'py-4'}`}>
-      <div className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-cream-300/60">
-        {isBreak ? <Coffee className="size-4" /> : <Timer className="size-4" />}
-        {isBreak
-          ? t('common.break')
-          : clock.playLevelNumber !== null
-            ? `${t('common.level')} ${clock.playLevelNumber}`
-            : ''}
-        {clock.status === 'PAUSED' ? <span className="text-amber-300">· {t('status.PAUSED')}</span> : null}
+    <div className={`text-center ${compact ? '' : 'py-2'}`}>
+      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5">
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[0.16em] ${
+            isBreak
+              ? 'border-success-500/25 bg-success-500/10 text-success-300'
+              : 'border-white/[0.09] bg-white/[0.035] text-cream-300'
+          }`}
+        >
+          {isBreak ? <Coffee className="size-3.5" aria-hidden /> : <Timer className="size-3.5" aria-hidden />}
+          {isBreak
+            ? t('common.break')
+            : clock.playLevelNumber !== null
+              ? `${t('common.level')} ${clock.playLevelNumber}`
+              : t('tournament.structure')}
+        </span>
+        {paused ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-warning-500/30 bg-warning-500/10 px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[0.16em] text-warning-300">
+            <span className="size-1.5 rounded-full bg-warning-400" aria-hidden />
+            {t('status.PAUSED')}
+          </span>
+        ) : null}
+        {urgent && !paused ? (
+          <span className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-gold-400">
+            Dernière minute
+          </span>
+        ) : null}
       </div>
 
       <div
-        className={`clock-digits mt-1 font-display font-bold leading-none ${digits} ${
-          urgent ? 'text-gold-400 animate-pulse-gold' : 'text-cream-50'
-        }`}
+        className={`clock-digits mt-3 ${digitSizes[size]} ${urgent ? 'text-gold-300' : 'text-cream-50'}`}
+        aria-live="off"
+        aria-label={`Temps restant : ${formatDuration(remainingMs)}`}
       >
         {formatDuration(remainingMs)}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-sm text-cream-200/80">
-        {isBreak ? (
-          <span className="text-cream-300/70">{t('common.break')}</span>
-        ) : (
-          <>
-            <span>
-              <span className="text-cream-300/50">SB</span>{' '}
-              <strong className="tabular text-cream-50">{formatChips(clock.smallBlind)}</strong>
-            </span>
-            <span>
-              <span className="text-cream-300/50">BB</span>{' '}
-              <strong className="tabular text-cream-50">{formatChips(clock.bigBlind)}</strong>
-            </span>
-            {clock.ante ? (
-              <span>
-                <span className="text-cream-300/50">Ante</span>{' '}
-                <strong className="tabular text-cream-50">{formatChips(clock.ante)}</strong>
-              </span>
-            ) : null}
-          </>
-        )}
-      </div>
+      {isBreak ? (
+        <p className="mt-3 font-display text-xl text-cream-300">Profitez de la pause.</p>
+      ) : (
+        <div
+          className={`mx-auto mt-4 grid max-w-md gap-2 ${clock.ante ? 'grid-cols-3' : 'grid-cols-2'}`}
+        >
+          <div className="rounded-[var(--radius-md)] border border-white/[0.06] bg-white/[0.025] px-3 py-2">
+            <div className="text-[9.5px] font-bold uppercase tracking-[0.18em] text-cream-400">
+              Petite blinde
+            </div>
+            <div className="tabular mt-0.5 text-lg font-bold text-cream-50">
+              {formatChips(clock.smallBlind)}
+            </div>
+          </div>
+          <div className="rounded-[var(--radius-md)] border border-gold-500/20 bg-gold-500/[0.06] px-3 py-2">
+            <div className="text-[9.5px] font-bold uppercase tracking-[0.18em] text-gold-500">
+              Grosse blinde
+            </div>
+            <div className="tabular mt-0.5 text-lg font-bold text-gold-300">
+              {formatChips(clock.bigBlind)}
+            </div>
+          </div>
+          {clock.ante ? (
+            <div className="rounded-[var(--radius-md)] border border-white/[0.06] bg-white/[0.025] px-3 py-2">
+              <div className="text-[9.5px] font-bold uppercase tracking-[0.18em] text-cream-400">
+                Ante
+              </div>
+              <div className="tabular mt-0.5 text-lg font-bold text-cream-50">
+                {formatChips(clock.ante)}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
 
-      {clock.upcoming.length > 0 && !compact ? (
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-cream-300/60">
-          <span className="uppercase tracking-wider">Suivant</span>
+      {showUpcoming && clock.upcoming.length > 0 && !compact ? (
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
+          <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-cream-400">
+            À suivre
+          </span>
           {clock.upcoming.slice(0, 3).map((segment) => (
-            <span key={segment.index} className="rounded-full bg-white/5 px-2.5 py-1 ring-1 ring-white/10">
+            <span
+              key={segment.index}
+              className="rounded-full border border-white/[0.07] bg-white/[0.025] px-2.5 py-1 text-cream-300"
+            >
               {segment.kind === 'BREAK'
                 ? t('common.break')
                 : `${formatChips(segment.smallBlind)} / ${formatChips(segment.bigBlind)}`}
@@ -145,7 +184,9 @@ export function ClockFace({
       ) : null}
 
       {clock.structureExhausted ? (
-        <p className="mt-4 text-sm font-medium text-amber-300">{t('tournament.structureExhausted')}</p>
+        <p className="mt-4 inline-flex rounded-full border border-warning-500/30 bg-warning-500/10 px-3 py-1.5 text-xs font-semibold text-warning-300">
+          {t('tournament.structureExhausted')}
+        </p>
       ) : null}
     </div>
   );
@@ -156,12 +197,11 @@ export function ClockProgress({ clock, remainingMs }: { clock: ClockView; remain
     clock.segmentDurationMs > 0
       ? Math.max(0, Math.min(1, remainingMs / clock.segmentDurationMs))
       : 0;
+  const tone = ratio < 0.15 ? 'bg-warning-400' : 'bg-gold-500';
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]">
       <div
-        className={`h-full rounded-full transition-[width] duration-500 ${
-          ratio < 0.15 ? 'bg-amber-400' : 'bg-gold-500'
-        }`}
+        className={`h-full rounded-full transition-[width] duration-500 ${tone}`}
         style={{ width: `${ratio * 100}%` }}
       />
     </div>

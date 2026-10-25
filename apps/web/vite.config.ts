@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const apiTarget = process.env.API_PROXY_TARGET ?? 'http://127.0.0.1:4000';
+
 export default defineConfig({
   plugins: [
     react(),
@@ -44,9 +46,9 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
     proxy: {
-      '/api': { target: 'http://127.0.0.1:4000', changeOrigin: false },
-      '/socket.io': { target: 'http://127.0.0.1:4000', ws: true },
-      '/health': { target: 'http://127.0.0.1:4000' },
+      '/api': { target: apiTarget, changeOrigin: false },
+      '/socket.io': { target: apiTarget, ws: true },
+      '/health': { target: apiTarget },
     },
   },
   build: {

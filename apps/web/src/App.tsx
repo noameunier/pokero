@@ -28,7 +28,7 @@ function NotFoundPage() {
     <div className="mx-auto flex max-w-md flex-col items-center py-20 text-center">
       <p className="font-display text-6xl font-bold text-gold-500">404</p>
       <h1 className="mt-4 text-2xl font-semibold text-cream-50">Page introuvable</h1>
-      <p className="mt-2 text-sm text-cream-300/70">
+      <p className="mt-2 text-sm text-cream-300">
         Cette page n’existe pas ou a été déplacée.
       </p>
       <Link to="/" className="btn-primary mt-8">

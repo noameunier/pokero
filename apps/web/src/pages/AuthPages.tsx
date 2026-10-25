@@ -1,12 +1,60 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, CheckCircle2, Mail, Spade, TriangleAlert } from 'lucide-react';
+import {
+  ArrowRight,
+  CheckCircle2,
+  Mail,
+  ShieldCheck,
+  Spade,
+  Timer,
+  TriangleAlert,
+  WalletCards,
+} from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { api, ApiError } from '../lib/api';
 import { useApiErrorMessage } from '../lib/format';
 import { Button, Field, Input } from '../components/ui';
 import { useToast } from '../components/Toast';
+
+function BrandMark({ className = '' }: { className?: string }) {
+  return (
+    <span className={`flex items-center gap-2.5 ${className}`}>
+      <span className="grid size-10 place-items-center rounded-[11px] border border-gold-400/50 bg-gold-500 text-night-950 shadow-[inset_0_1px_0_rgb(255_255_255/0.35),0_8px_20px_-10px_rgb(207_169_88/0.65)]">
+        <Spade className="size-5" fill="currentColor" strokeWidth={1.5} aria-hidden />
+      </span>
+      <span className="flex flex-col leading-none">
+        <span className="font-display text-[1.6rem] leading-none text-cream-50">Pokero</span>
+        <span className="mt-0.5 text-[8.5px] font-semibold uppercase tracking-[0.28em] text-gold-500">
+          Poker club
+        </span>
+      </span>
+    </span>
+  );
+}
+
+function FormAlert({
+  tone,
+  children,
+}: {
+  tone: 'danger' | 'success';
+  children: ReactNode;
+}) {
+  const Icon = tone === 'danger' ? TriangleAlert : CheckCircle2;
+  return (
+    <div
+      role={tone === 'danger' ? 'alert' : 'status'}
+      className={`flex items-start gap-2.5 rounded-[var(--radius-md)] border px-3.5 py-3 text-[12.5px] leading-relaxed ${
+        tone === 'danger'
+          ? 'border-danger-500/30 bg-danger-500/[0.08] text-danger-300'
+          : 'border-success-500/25 bg-success-500/[0.07] text-success-300'
+      }`}
+    >
+      <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
+      <span className="min-w-0">{children}</span>
+    </div>
+  );
+}
 
 function AuthShell({
   title,
@@ -20,58 +68,96 @@ function AuthShell({
   footer?: ReactNode;
 }) {
   return (
-    <div className="relative grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
-      <div className="relative hidden overflow-hidden border-r border-white/10 lg:block">
-        <div className="absolute inset-0 bg-[radial-gradient(900px_600px_at_30%_20%,#12624a_0%,transparent_60%)]" />
-        <div className="relative flex h-full flex-col justify-between p-12">
-          <Link to="/" className="flex items-center gap-3">
-            <span className="grid size-11 place-items-center rounded-2xl bg-gold-500 text-felt-950 shadow-xl shadow-gold-500/20">
-              <Spade className="size-6" fill="currentColor" />
-            </span>
-            <span className="font-display text-2xl font-bold text-cream-50">Pokero</span>
-          </Link>
-          <div className="max-w-md">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-gold-400">Poker club</p>
-            <h1 className="mt-4 font-display text-5xl font-bold leading-tight text-cream-50">
-              Le tournoi,
-              <br />
-              sans les approximations.
-            </h1>
-            <p className="mt-5 text-base leading-relaxed text-cream-200/70">
-              Caves calculées au jeton près, chronomètre serveur, classement instantané et
-              liens spectateurs révocables. Tout ce qu’il faut pour animer une soirée de poker.
-            </p>
-            <div className="mt-8 grid grid-cols-3 gap-4 text-center">
-              {[
-                { value: '100 BB', label: 'Profondeur de départ' },
-                { value: '3', label: 'Modes de reprise' },
-                { value: '∞', label: 'Spectateurs' },
-              ].map((item) => (
-                <div key={item.label} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                  <div className="font-display text-xl font-bold text-gold-400">{item.value}</div>
-                  <div className="mt-1 text-[11px] uppercase tracking-wide text-cream-300/60">{item.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <p className="text-xs text-cream-300/40">
-            Pokero · gestion de tournois · aucune dépendance à un compte de jeu en ligne
-          </p>
-        </div>
-      </div>
+    <div className="relative grid min-h-dvh lg:grid-cols-[1.05fr_minmax(0,1fr)]">
+      <aside className="relative hidden overflow-hidden border-r border-white/[0.07] lg:flex lg:flex-col lg:justify-between lg:p-12">
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(760px_560px_at_22%_12%,rgb(17_64_47/0.75),transparent_68%)]"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-[radial-gradient(700px_360px_at_20%_110%,rgb(207_169_88/0.07),transparent_70%)]"
+          aria-hidden
+        />
 
-      <div className="flex items-center justify-center px-5 py-10 sm:px-10">
-        <div className="w-full max-w-sm animate-rise">
-          <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <span className="grid size-10 place-items-center rounded-xl bg-gold-500 text-felt-950">
-              <Spade className="size-5" fill="currentColor" />
-            </span>
-            <span className="font-display text-xl font-bold text-cream-50">Pokero</span>
+        <div className="relative">
+          <Link to="/" aria-label="Pokero — accueil">
+            <BrandMark />
+          </Link>
+        </div>
+
+        <div className="relative max-w-lg">
+          <p className="flex items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-gold-500">
+            <span className="inline-block h-px w-7 bg-gold-500/60" aria-hidden />
+            Organisation de tournois
+          </p>
+          <h1 className="mt-4 font-display text-[3.1rem] leading-[1.04] text-cream-50">
+            Le tournoi,
+            <br />
+            sans les approximations.
+          </h1>
+          <p className="mt-5 max-w-md text-[14.5px] leading-relaxed text-cream-300">
+            Caves calculées au jeton près, chronomètre piloté par le serveur, classement instantané
+            et liens spectateurs révocables. Tout ce qu’il faut pour animer une soirée de poker.
+          </p>
+
+          <ul className="mt-8 space-y-3">
+            {[
+              {
+                icon: WalletCards,
+                title: 'Caves exactes',
+                text: 'Le stock physique est réservé, jamais dépassé.',
+              },
+              {
+                icon: Timer,
+                title: 'Chrono serveur',
+                text: 'Tous les écrans restent alignés, même après une coupure.',
+              },
+              {
+                icon: ShieldCheck,
+                title: 'Données maîtrisées',
+                text: 'Comptes, exports RGPD et liens spectateurs révocables.',
+              },
+            ].map((item) => (
+              <li key={item.title} className="flex items-start gap-3">
+                <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-[9px] border border-gold-500/20 bg-gold-500/[0.07] text-gold-400">
+                  <item.icon className="size-4" aria-hidden />
+                </span>
+                <span>
+                  <span className="block text-[13px] font-semibold text-cream-100">
+                    {item.title}
+                  </span>
+                  <span className="block text-[12px] leading-relaxed text-cream-400">
+                    {item.text}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <p className="relative text-[11px] text-cream-500">
+          Pokero · outil d’organisation · aucun argent réel, aucun jeu en ligne
+        </p>
+      </aside>
+
+      <div className="relative flex flex-col">
+        <div className="flex items-center justify-between px-5 pb-0 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-8 lg:hidden">
+          <Link to="/" aria-label="Pokero — accueil">
+            <BrandMark />
+          </Link>
+        </div>
+
+        <div className="flex flex-1 items-center justify-center px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-8 sm:px-8 lg:py-12">
+          <div className="w-full max-w-[400px] animate-rise">
+            <h2 className="font-display text-[2.15rem] leading-tight text-cream-50">{title}</h2>
+            <p className="mt-2 text-[13.5px] leading-relaxed text-cream-300">{subtitle}</p>
+            <div className="mt-7">{children}</div>
+            {footer ? (
+              <div className="mt-7 border-t border-white/[0.06] pt-5 text-[13px] text-cream-300">
+                {footer}
+              </div>
+            ) : null}
           </div>
-          <h2 className="font-display text-3xl font-bold text-cream-50">{title}</h2>
-          <p className="mt-2 text-sm text-cream-300/70">{subtitle}</p>
-          <div className="mt-8">{children}</div>
-          {footer ? <div className="mt-8 text-sm text-cream-300/70">{footer}</div> : null}
         </div>
       </div>
     </div>
@@ -118,7 +204,7 @@ export function LoginPage() {
               {t('auth.register')}
             </Link>
           </p>
-          <p className="text-xs text-cream-300/50">
+          <p className="text-[11.5px] leading-relaxed text-cream-500">
             Pokero est un outil d’organisation. Aucun argent réel, aucun jeu en ligne.
           </p>
         </div>
@@ -146,18 +232,13 @@ export function LoginPage() {
             onChange={(event) => setPassword(event.target.value)}
           />
         </Field>
-        {error ? (
-          <div className="flex items-start gap-2 rounded-xl border border-red-400/30 bg-red-950/40 px-3 py-2.5 text-sm text-red-100">
-            <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        ) : null}
-        <Button type="submit" loading={submitting} className="w-full">
+        {error ? <FormAlert tone="danger">{error}</FormAlert> : null}
+        <Button type="submit" loading={submitting} className="w-full" size="lg">
           {t('auth.loginCta')}
-          <ArrowRight className="size-4" />
+          <ArrowRight className="size-4" aria-hidden />
         </Button>
         <p className="text-center text-xs">
-          <Link to="/mot-de-passe-oublie" className="text-cream-300/60 hover:text-gold-400">
+          <Link to="/mot-de-passe-oublie" className="text-cream-400 hover:text-gold-400">
             {t('auth.forgot')}
           </Link>
         </p>
@@ -256,13 +337,8 @@ export function RegisterPage() {
             onChange={(event) => setConfirm(event.target.value)}
           />
         </Field>
-        {error ? (
-          <div className="flex items-start gap-2 rounded-xl border border-red-400/30 bg-red-950/40 px-3 py-2.5 text-sm text-red-100">
-            <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        ) : null}
-        <Button type="submit" loading={submitting} className="w-full">
+        {error ? <FormAlert tone="danger">{error}</FormAlert> : null}
+        <Button type="submit" loading={submitting} className="w-full" size="lg">
           {t('auth.registerCta')}
         </Button>
       </form>
@@ -303,24 +379,23 @@ export function ForgotPasswordPage() {
       }
     >
       {sent ? (
-        <div className="flex items-start gap-3 rounded-xl border border-emerald-400/30 bg-emerald-950/40 p-4 text-sm text-emerald-50">
-          <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
-          <p>{t('auth.resetSent')}</p>
-        </div>
+        <FormAlert tone="success">{t('auth.resetSent')}</FormAlert>
       ) : (
         <form onSubmit={onSubmit} className="space-y-4">
           <Field label={t('auth.email')} htmlFor="email">
             <Input
               id="email"
               type="email"
+              autoComplete="email"
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              placeholder="vous@exemple.fr"
             />
           </Field>
-          {error ? <p className="field-error">{error}</p> : null}
-          <Button type="submit" loading={submitting} className="w-full">
-            <Mail className="size-4" />
+          {error ? <FormAlert tone="danger">{error}</FormAlert> : null}
+          <Button type="submit" loading={submitting} className="w-full" size="lg">
+            <Mail className="size-4" aria-hidden />
             Envoyer le lien
           </Button>
         </form>
@@ -363,13 +438,10 @@ export function ResetPasswordPage() {
   return (
     <AuthShell title={t('auth.resetTitle')} subtitle="Choisissez un nouveau mot de passe.">
       {!token ? (
-        <div className="flex items-start gap-3 rounded-xl border border-red-400/30 bg-red-950/40 p-4 text-sm text-red-50">
-          <TriangleAlert className="mt-0.5 size-5 shrink-0" />
-          <p>Lien incomplet. Recommencez la procédure.</p>
-        </div>
+        <FormAlert tone="danger">Lien incomplet. Recommencez la procédure.</FormAlert>
       ) : (
         <form onSubmit={onSubmit} className="space-y-4">
-          <Field label={t('auth.newPassword')} htmlFor="password">
+          <Field label={t('auth.newPassword')} hint={t('auth.passwordHint')} htmlFor="password">
             <Input
               id="password"
               type="password"
@@ -390,8 +462,8 @@ export function ResetPasswordPage() {
               onChange={(event) => setConfirm(event.target.value)}
             />
           </Field>
-          {error ? <p className="field-error">{error}</p> : null}
-          <Button type="submit" loading={submitting} className="w-full">
+          {error ? <FormAlert tone="danger">{error}</FormAlert> : null}
+          <Button type="submit" loading={submitting} className="w-full" size="lg">
             {t('common.save')}
           </Button>
         </form>
@@ -422,22 +494,18 @@ export function VerifyEmailPage() {
 
   return (
     <AuthShell title={t('auth.verifyTitle')} subtitle="Confirmation de votre adresse email.">
-      <div className="space-y-6">
-        {status === 'loading' ? <p className="text-cream-200/70">{t('common.loading')}</p> : null}
-        {status === 'ok' ? (
-          <div className="flex items-start gap-3 rounded-xl border border-emerald-400/30 bg-emerald-950/40 p-4 text-sm text-emerald-50">
-            <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
-            <p>{t('auth.verifySuccess')}</p>
-          </div>
+      <div className="space-y-5">
+        {status === 'loading' ? (
+          <p className="flex items-center gap-2 text-[13px] text-cream-300" role="status">
+            <span className="size-1.5 animate-live rounded-full bg-gold-400" aria-hidden />
+            {t('common.loading')}
+          </p>
         ) : null}
-        {status === 'error' ? (
-          <div className="flex items-start gap-3 rounded-xl border border-red-400/30 bg-red-950/40 p-4 text-sm text-red-50">
-            <TriangleAlert className="mt-0.5 size-5 shrink-0" />
-            <p>{t('auth.verifyError')}</p>
-          </div>
-        ) : null}
+        {status === 'ok' ? <FormAlert tone="success">{t('auth.verifySuccess')}</FormAlert> : null}
+        {status === 'error' ? <FormAlert tone="danger">{t('auth.verifyError')}</FormAlert> : null}
         <Link to="/" className="btn-primary w-full">
           {t('nav.dashboard')}
+          <ArrowRight className="size-4" aria-hidden />
         </Link>
       </div>
     </AuthShell>

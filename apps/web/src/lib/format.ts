@@ -41,17 +41,17 @@ export function formatDateShort(value: string | null | undefined, locale = 'fr-F
 export function statusTone(status: TournamentStatus): string {
   switch (status) {
     case 'RUNNING':
-      return 'bg-success-500/20 text-emerald-200 ring-1 ring-success-500/40';
+      return 'border-success-500/30 bg-success-500/10 text-success-300';
     case 'PAUSED':
-      return 'bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/30';
+      return 'border-warning-500/30 bg-warning-500/10 text-warning-300';
     case 'COMPLETED':
-      return 'bg-white/10 text-cream-200 ring-1 ring-white/15';
+      return 'border-white/10 bg-white/[0.04] text-cream-300';
     case 'CANCELLED':
-      return 'bg-red-500/15 text-red-200 ring-1 ring-red-500/30';
+      return 'border-danger-500/30 bg-danger-500/10 text-danger-300';
     case 'DRAFT':
-      return 'bg-white/5 text-cream-300 ring-1 ring-white/10';
+      return 'border-white/10 bg-white/[0.03] text-cream-400';
     default:
-      return 'bg-felt-500/20 text-emerald-100 ring-1 ring-felt-500/40';
+      return 'border-gold-500/30 bg-gold-500/10 text-gold-300';
   }
 }
 
@@ -71,7 +71,7 @@ export function useApiErrorMessage(): (error: unknown) => string {
         if (translated) return translated;
         return String((error as { message: unknown }).message);
       }
-      return t('common.error');
+      return t('common.unreachable');
     },
     [t],
   );

@@ -1,14 +1,24 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import { useQueryClient } from '@tanstack/react-query';
-import { Download, KeyRound, ShieldCheck, Trash2, UserRound } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  Download,
+  KeyRound,
+  MailCheck,
+  MailWarning,
+  ShieldCheck,
+  Trash2,
+  TriangleAlert,
+  UserRound,
+} from 'lucide-react';
 import { api, downloadExport } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useApiErrorMessage } from '../lib/format';
-import { Button, Card, Field, Input, Select, Switch } from '../components/ui';
+import { Badge, Button, Card, Field, Input, PageHeader, Select, Switch, Tabs } from '../components/ui';
 import { useToast } from '../components/Toast';
+
+type AccountTab = 'profile' | 'security' | 'data';
 
 export function AccountPage() {
   const { t, i18n } = useTranslation();
@@ -18,6 +28,7 @@ export function AccountPage() {
   const { success, error: notifyError } = useToast();
   const errorMessage = useApiErrorMessage();
 
+  const [tab, setTab] = useState<AccountTab>('profile');
   const [displayName, setDisplayName] = useState(user?.displayName ?? '');
   const [publicProfile, setPublicProfile] = useState(user?.publicProfile ?? false);
   const [publicResults, setPublicResults] = useState(user?.publicResults ?? false);
@@ -84,61 +95,93 @@ export function AccountPage() {
     .toUpperCase();
 
   return (
-    <div className="space-y-6">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-500/80">
-          {t('account.title')}
-        </p>
-        <h1 className="mt-1 font-display text-3xl font-bold text-cream-50">{t('account.title')}</h1>
-        <p className="mt-1.5 text-sm text-cream-300/70">{t('account.subtitle')}</p>
-      </header>
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Votre espace"
+        title={t('account.title')}
+        description={t('account.subtitle')}
+      />
 
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-        <div className="space-y-6">
-          <Card>
-            <div className="mb-4 flex items-center gap-3">
-              <span className="grid size-12 place-items-center rounded-2xl bg-gold-500/15 font-display text-lg font-bold text-gold-300">
-                {initials || 'PK'}
-              </span>
-              <div>
-                <h2 className="flex items-center gap-2 text-lg font-semibold text-cream-50">
-                  <UserRound className="size-4 text-gold-500" />
-                  {t('account.profile')}
-                </h2>
-                <p className="text-xs text-cream-300/60">{user.email}</p>
-              </div>
+      <section className="card flex flex-wrap items-center gap-4 p-4 sm:p-5">
+        <span className="grid size-14 shrink-0 place-items-center rounded-[var(--radius-md)] border border-gold-500/25 bg-gold-500/[0.09] font-display text-xl text-gold-200">
+          {initials || 'PK'}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate font-display text-2xl leading-tight text-cream-50">
+            {user.displayName}
+          </h2>
+          <p className="mt-0.5 truncate text-[12.5px] text-cream-400">{user.email}</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            <Badge tone={user.emailVerified ? 'success' : 'warning'} dot>
+              {user.emailVerified ? 'Email vérifié' : 'Email non vérifié'}
+            </Badge>
+            <Badge tone={user.publicProfile ? 'gold' : 'neutral'}>
+              {user.publicProfile ? 'Profil public' : 'Profil privé'}
+            </Badge>
+            <Badge tone="neutral">{locale === 'en' ? 'English' : 'Français'}</Badge>
+          </div>
+        </div>
+      </section>
+
+      <Tabs<AccountTab>
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          { value: 'profile', label: t('account.profile') },
+          { value: 'security', label: t('account.security') },
+          { value: 'data', label: t('account.data') },
+        ]}
+      />
+
+      {tab === 'profile' ? (
+        <Card className="p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <span className="grid size-9 shrink-0 place-items-center rounded-full border border-white/[0.07] bg-white/[0.03] text-gold-500">
+              <UserRound className="size-4" aria-hidden />
+            </span>
+            <div>
+              <h2 className="font-display text-2xl text-cream-50">{t('account.profile')}</h2>
+              <p className="mt-0.5 text-[12px] text-cream-400">
+                Votre pseudo apparaît dans les tournois et les classements.
+              </p>
             </div>
+          </div>
 
-            <form
-              className="space-y-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                profileMutation.mutate();
-              }}
-            >
-              <Field label={t('auth.displayName')}>
-                <Input
-                  value={displayName}
-                  maxLength={40}
-                  minLength={2}
-                  required
-                  onChange={(event) => setDisplayName(event.target.value)}
-                />
-              </Field>
-              <Field label={t('account.language')}>
-                <Select
-                  value={locale}
-                  onChange={(event) => {
-                    const value = event.target.value === 'en' ? 'en' : 'fr';
-                    setLocale(value);
-                    void i18n.changeLanguage(value);
-                    localStorage.setItem('pokero.locale', value);
-                  }}
-                >
-                  <option value="fr">Français</option>
-                  <option value="en">English</option>
-                </Select>
-              </Field>
+          <form
+            className="mt-5 space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              profileMutation.mutate();
+            }}
+          >
+            <Field label={t('auth.displayName')} htmlFor="account-display-name">
+              <Input
+                id="account-display-name"
+                value={displayName}
+                maxLength={40}
+                minLength={2}
+                required
+                autoComplete="nickname"
+                onChange={(event) => setDisplayName(event.target.value)}
+              />
+            </Field>
+            <Field label={t('account.language')} htmlFor="account-locale">
+              <Select
+                id="account-locale"
+                value={locale}
+                onChange={(event) => {
+                  const value = event.target.value === 'en' ? 'en' : 'fr';
+                  setLocale(value);
+                  void i18n.changeLanguage(value);
+                  localStorage.setItem('pokero.locale', value);
+                }}
+              >
+                <option value="fr">Français</option>
+                <option value="en">English</option>
+              </Select>
+            </Field>
+
+            <div className="space-y-2">
               <Switch
                 label={t('account.publicProfile')}
                 hint="Un profil public permet d’être trouvé par votre pseudo."
@@ -151,55 +194,83 @@ export function AccountPage() {
                 checked={publicResults}
                 onChange={setPublicResults}
               />
-              <Button type="submit" loading={profileMutation.isPending}>
-                {t('common.save')}
-              </Button>
-            </form>
-          </Card>
+            </div>
 
-          <Card>
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-cream-50">
-              <KeyRound className="size-4 text-gold-500" />
-              {t('account.security')}
-            </h2>
-            <form
-              className="space-y-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                passwordMutation.mutate();
-              }}
+            <Button type="submit" loading={profileMutation.isPending}>
+              {t('common.save')}
+            </Button>
+          </form>
+        </Card>
+      ) : null}
+
+      {tab === 'security' ? (
+        <Card className="p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <span className="grid size-9 shrink-0 place-items-center rounded-full border border-white/[0.07] bg-white/[0.03] text-gold-500">
+              <KeyRound className="size-4" aria-hidden />
+            </span>
+            <div>
+              <h2 className="font-display text-2xl text-cream-50">{t('account.security')}</h2>
+              <p className="mt-0.5 text-[12px] text-cream-400">
+                Mot de passe et vérification de l’adresse email.
+              </p>
+            </div>
+          </div>
+
+          <form
+            className="mt-5 space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              passwordMutation.mutate();
+            }}
+          >
+            <Field label={t('account.currentPassword')} htmlFor="account-current-password">
+              <Input
+                id="account-current-password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={currentPassword}
+                onChange={(event) => setCurrentPassword(event.target.value)}
+              />
+            </Field>
+            <Field
+              label={t('account.newPassword')}
+              hint={t('auth.passwordHint')}
+              htmlFor="account-new-password"
             >
-              <Field label={t('account.currentPassword')}>
-                <Input
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={currentPassword}
-                  onChange={(event) => setCurrentPassword(event.target.value)}
-                />
-              </Field>
-              <Field label={t('account.newPassword')} hint={t('auth.passwordHint')}>
-                <Input
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  minLength={10}
-                  value={newPassword}
-                  onChange={(event) => setNewPassword(event.target.value)}
-                />
-              </Field>
-              <Button
-                type="submit"
-                variant="secondary"
-                loading={passwordMutation.isPending}
-                disabled={newPassword.length < 10 || currentPassword.length === 0}
-              >
-                {t('account.changePassword')}
-              </Button>
-            </form>
-            {!user.emailVerified ? (
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-400/30 bg-amber-950/20 px-3 py-2 text-xs text-amber-100">
-                <span>Votre adresse email n’est pas encore vérifiée.</span>
+              <Input
+                id="account-new-password"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={10}
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+              />
+            </Field>
+            <Button
+              type="submit"
+              variant="secondary"
+              loading={passwordMutation.isPending}
+              disabled={newPassword.length < 10 || currentPassword.length === 0}
+            >
+              {t('account.changePassword')}
+            </Button>
+          </form>
+
+          <div className="mt-5 border-t border-white/[0.06] pt-4">
+            {user.emailVerified ? (
+              <p className="flex items-center gap-2 rounded-[var(--radius-md)] border border-success-500/25 bg-success-500/[0.07] px-3.5 py-3 text-[12.5px] text-success-300">
+                <MailCheck className="size-4 shrink-0" aria-hidden />
+                Votre adresse email est vérifiée.
+              </p>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-md)] border border-warning-500/25 bg-warning-500/[0.07] px-3.5 py-3 text-[12.5px] text-warning-300">
+                <span className="flex items-center gap-2">
+                  <MailWarning className="size-4 shrink-0" aria-hidden />
+                  Votre adresse email n’est pas encore vérifiée.
+                </span>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -213,59 +284,72 @@ export function AccountPage() {
                   Renvoyer
                 </Button>
               </div>
-            ) : null}
-          </Card>
-        </div>
+            )}
+          </div>
+        </Card>
+      ) : null}
 
-        <div className="space-y-6">
-          <Card>
-            <h2 className="mb-2 flex items-center gap-2 text-lg font-semibold text-cream-50">
-              <ShieldCheck className="size-4 text-gold-500" />
-              {t('account.data')}
-            </h2>
-            <p className="text-xs text-cream-300/60">
-              Exportez l’ensemble de vos données personnelles au format JSON (RGPD).
-            </p>
+      {tab === 'data' ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card className="p-4 sm:p-5">
+            <div className="flex items-start gap-3">
+              <span className="grid size-9 shrink-0 place-items-center rounded-full border border-white/[0.07] bg-white/[0.03] text-gold-500">
+                <ShieldCheck className="size-4" aria-hidden />
+              </span>
+              <div>
+                <h2 className="font-display text-2xl text-cream-50">Vos données</h2>
+                <p className="mt-0.5 text-[12px] text-cream-400">
+                  Exportez l’ensemble de vos données personnelles au format JSON (RGPD).
+                </p>
+              </div>
+            </div>
             <Button
               variant="secondary"
-              size="sm"
-              className="mt-3 w-full"
+              className="mt-4 w-full sm:w-auto"
               onClick={() => {
                 void downloadExport()
                   .then(() => success(t('account.dataExported')))
                   .catch((caught) => notifyError(errorMessage(caught)));
               }}
             >
-              <Download className="size-4" />
+              <Download className="size-4" aria-hidden />
               {t('account.exportData')}
             </Button>
           </Card>
 
-          <Card className="border-red-500/20">
-            <h2 className="text-lg font-semibold text-cream-50">{t('account.deleteAccount')}</h2>
-            <p className="mt-2 text-xs leading-relaxed text-cream-300/60">
-              {t('account.deleteWarning')}
-            </p>
+          <Card className="border-danger-500/25 p-4 sm:p-5">
+            <div className="flex items-start gap-3">
+              <span className="grid size-9 shrink-0 place-items-center rounded-full border border-danger-500/25 bg-danger-500/[0.08] text-danger-300">
+                <TriangleAlert className="size-4" aria-hidden />
+              </span>
+              <div>
+                <h2 className="font-display text-2xl text-cream-50">{t('account.deleteAccount')}</h2>
+                <p className="mt-0.5 text-[12px] leading-relaxed text-cream-400">
+                  {t('account.deleteWarning')}
+                </p>
+              </div>
+            </div>
+
             {!deleteOpen ? (
               <Button
                 variant="danger"
-                size="sm"
-                className="mt-3 w-full"
+                className="mt-4 w-full sm:w-auto"
                 onClick={() => setDeleteOpen(true)}
               >
-                <Trash2 className="size-4" />
+                <Trash2 className="size-4" aria-hidden />
                 {t('account.deleteAccount')}
               </Button>
             ) : (
               <form
-                className="mt-3 space-y-3"
+                className="mt-4 space-y-3"
                 onSubmit={(event) => {
                   event.preventDefault();
                   deleteMutation.mutate();
                 }}
               >
-                <Field label={t('auth.password')}>
+                <Field label={t('auth.password')} htmlFor="delete-password">
                   <Input
+                    id="delete-password"
                     type="password"
                     autoComplete="current-password"
                     required
@@ -273,30 +357,32 @@ export function AccountPage() {
                     onChange={(event) => setDeletePassword(event.target.value)}
                   />
                 </Field>
-                <Field label={t('account.deleteConfirm')}>
+                <Field label={t('account.deleteConfirm')} htmlFor="delete-confirm">
                   <Input
+                    id="delete-confirm"
                     value={deleteConfirm}
                     onChange={(event) => setDeleteConfirm(event.target.value)}
                     placeholder="SUPPRIMER"
+                    autoComplete="off"
                   />
                 </Field>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     type="submit"
                     variant="danger"
-                    size="sm"
                     loading={deleteMutation.isPending}
-                    disabled={
-                      deleteConfirm !== 'SUPPRIMER' || deletePassword.length === 0
-                    }
+                    disabled={deleteConfirm !== 'SUPPRIMER' || deletePassword.length === 0}
                   >
                     {t('common.confirm')}
                   </Button>
                   <Button
                     type="button"
                     variant="ghost"
-                    size="sm"
-                    onClick={() => setDeleteOpen(false)}
+                    onClick={() => {
+                      setDeleteOpen(false);
+                      setDeletePassword('');
+                      setDeleteConfirm('');
+                    }}
                   >
                     {t('common.cancel')}
                   </Button>
@@ -305,7 +391,7 @@ export function AccountPage() {
             )}
           </Card>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

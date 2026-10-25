@@ -18,7 +18,16 @@ import { generateBlindStructure } from '@pokero/domain';
 import { api } from '../lib/api';
 import { formatChips, formatMinutes, useApiErrorMessage } from '../lib/format';
 import type { BuyInPlan, ChipCase, Preset, Tournament } from '../lib/types';
-import { Badge, Button, Card, Field, Input, Select, Switch } from '../components/ui';
+import { ChipCountEditor } from '../components/ChipCountEditor';
+import {
+  Badge,
+  Button,
+  Card,
+  Field,
+  Input,
+  Select,
+  Switch,
+} from '../components/ui';
 import { useToast } from '../components/Toast';
 
 interface ManualLevel {
@@ -45,11 +54,31 @@ const NEW_PRESET_DEFAULTS = {
   antePercentOfBigBlind: 0.125,
 };
 
+function SummaryTile({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+}) {
+  return (
+    <div className="rounded-[var(--radius-sm)] border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
+      <div className="text-[9.5px] font-bold uppercase tracking-[0.14em] text-cream-400">
+        {label}
+      </div>
+      <div className="tabular mt-0.5 truncate text-[15px] font-bold text-cream-50">{value}</div>
+      {hint ? <div className="mt-0.5 truncate text-[10.5px] text-cream-500">{hint}</div> : null}
+    </div>
+  );
+}
+
 export function TournamentNewPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { success, error: notifyError } = useToast();
+  const { success } = useToast();
   const errorMessage = useApiErrorMessage();
 
   const [step, setStep] = useState(0);
@@ -61,6 +90,8 @@ export function TournamentNewPage() {
   const [startingStack, setStartingStack] = useState(NEW_PRESET_DEFAULTS.startingStack);
   const [mode, setMode] = useState<'AUTO' | 'MANUAL'>('AUTO');
   const [manualCounts, setManualCounts] = useState<Record<string, number>>({});
+  const [commonEnabled, setCommonEnabled] = useState<Record<string, boolean>>({});
+  const [commonCount, setCommonCount] = useState(0);
   const [maxChipsPerPlayer, setMaxChipsPerPlayer] = useState(NEW_PRESET_DEFAULTS.maxChipsPerPlayer);
 
   const [autoGenerate, setAutoGenerate] = useState(true);
@@ -111,7 +142,9 @@ export function TournamentNewPage() {
 
   useEffect(() => {
     if (chipCaseId || chipCases.length === 0) return;
-    const preset = presetsQuery.data?.presets.find((item) => item.id === (params.get('preset') ?? ''));
+    const preset = presetsQuery.data?.presets.find(
+      (item) => item.id === (params.get('preset') ?? ''),
+    );
     const preferred = preset?.defaultChipCaseId;
     const match = chipCases.find((chipCase) => chipCase.id === preferred) ?? chipCases[0]!;
     setChipCaseId(match.id);
@@ -126,7 +159,16 @@ export function TournamentNewPage() {
     if (!preset) return;
     const config = preset.config as Record<string, unknown>;
     const buyIn = config.buyIn as
-      | { players?: number; targetBuyIn?: number; startingStack?: number; maxChipsPerPlayer?: number }
+      | {
+          players?: number;
+          targetBuyIn?: number;
+          startingStack?: number;
+          maxChipsPerPlayer?: number;
+          mode?: 'AUTO' | 'MANUAL';
+          counts?: Record<string, number>;
+          commonEnabled?: Record<string, boolean>;
+          commonCount?: number;
+        }
       | undefined;
     const blinds = config.blinds as
       | {
@@ -142,7 +184,12 @@ export function TournamentNewPage() {
         }
       | undefined;
     const rebuy = config.rebuy as
-      | { enabled?: boolean; unlimited?: boolean; maxPerPlayer?: number | null; untilLevel?: number | null }
+      | {
+          enabled?: boolean;
+          unlimited?: boolean;
+          maxPerPlayer?: number | null;
+          untilLevel?: number | null;
+        }
       | undefined;
     const addOn = config.addOn as
       | { enabled?: boolean; value?: number | null; atLevel?: number | null }
@@ -157,10 +204,15 @@ export function TournamentNewPage() {
     if (buyIn?.targetBuyIn) setTargetBuyIn(buyIn.targetBuyIn);
     if (buyIn?.startingStack) setStartingStack(buyIn.startingStack);
     if (buyIn?.maxChipsPerPlayer) setMaxChipsPerPlayer(buyIn.maxChipsPerPlayer);
+    if (buyIn?.mode) setMode(buyIn.mode);
+    if (buyIn?.counts) setManualCounts(buyIn.counts);
+    if (buyIn?.commonEnabled) setCommonEnabled(buyIn.commonEnabled);
+    if (typeof buyIn?.commonCount === 'number') setCommonCount(buyIn.commonCount);
     if (blinds?.autoGenerate !== undefined) setAutoGenerate(blinds.autoGenerate);
     if (blinds?.targetDurationMinutes) setTargetDurationMinutes(blinds.targetDurationMinutes);
     if (blinds?.levelDurationMinutes) setLevelDurationMinutes(blinds.levelDurationMinutes);
-    if (blinds?.breakDurationMinutes !== undefined) setBreakDurationMinutes(blinds.breakDurationMinutes);
+    if (blinds?.breakDurationMinutes !== undefined)
+      setBreakDurationMinutes(blinds.breakDurationMinutes);
     if (blinds?.breakEveryLevels !== undefined) setBreakEveryLevels(blinds.breakEveryLevels);
     if (blinds?.roundUnit) setRoundUnit(blinds.roundUnit);
     if (blinds?.anteFromLevel) setAnteFromLevel(blinds.anteFromLevel);
@@ -193,6 +245,8 @@ export function TournamentNewPage() {
       mode,
       maxChipsPerPlayer,
       JSON.stringify(manualCounts),
+      JSON.stringify(commonEnabled),
+      commonCount,
     ],
     queryFn: () =>
       api.post<{ plan: BuyInPlan }>(`/api/chip-cases/${chipCaseId}/buyin/preview`, {
@@ -201,8 +255,8 @@ export function TournamentNewPage() {
         startingStack,
         mode,
         counts: mode === 'MANUAL' ? manualCounts : {},
-        commonEnabled: {},
-        commonCount: 0,
+        commonEnabled: mode === 'MANUAL' ? commonEnabled : {},
+        commonCount: mode === 'MANUAL' ? commonCount : 0,
         maxChipsPerPlayer,
       }),
     enabled: Boolean(chipCaseId) && players >= 2 && targetBuyIn > 0,
@@ -265,8 +319,8 @@ export function TournamentNewPage() {
           startingStack,
           mode,
           counts: mode === 'MANUAL' ? manualCounts : {},
-          commonEnabled: {},
-          commonCount: 0,
+          commonEnabled: mode === 'MANUAL' ? commonEnabled : {},
+          commonCount: mode === 'MANUAL' ? commonCount : 0,
           maxChipsPerPlayer,
         },
         blinds: autoGenerate
@@ -373,18 +427,29 @@ export function TournamentNewPage() {
     );
   };
 
+  const playLevels = autoGenerate
+    ? (generatedLevels?.levels.filter((level) => level.kind === 'PLAY').length ?? 0)
+    : manualLevels.filter((level) => level.kind === 'PLAY').length;
+  const plan = planQuery.data?.plan ?? null;
+  const manualChipTypes = selectedChipCase?.chipTypes ?? [];
+
+  const toggleCommon = (chipTypeId: string, enabled: boolean) =>
+    setCommonEnabled((current) => ({ ...current, [chipTypeId]: enabled }));
+
+  const previewLevels = autoGenerate ? (generatedLevels?.levels ?? []) : manualLevels;
+
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Link to="/" className="btn-ghost btn-sm p-2" aria-label={t('common.back')}>
-            <ArrowLeft className="size-5" />
+    <div className="space-y-5">
+      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <Link to="/" className="btn-ghost btn-icon -ml-1" aria-label={t('common.back')}>
+            <ArrowLeft className="size-5" aria-hidden />
           </Link>
-          <div>
-            <h1 className="font-display text-2xl font-bold text-cream-50 sm:text-3xl">
+          <div className="min-w-0">
+            <h1 className="truncate font-display text-[1.7rem] leading-tight text-cream-50 sm:text-[2rem]">
               {t('tournament.new')}
             </h1>
-            <p className="text-sm text-cream-300/60">{t('common.tagline')}</p>
+            <p className="text-[11.5px] text-cream-400">{t('common.tagline')}</p>
           </div>
         </div>
         <Badge tone="gold">
@@ -392,42 +457,73 @@ export function TournamentNewPage() {
         </Badge>
       </header>
 
-      <ol className="grid grid-cols-4 gap-1.5">
-        {STEPS.map((key, index) => (
-          <li key={key}>
-            <button
-              type="button"
-              onClick={() => index < step && setStep(index)}
-              className={`w-full rounded-xl border px-2 py-2.5 text-center text-[11px] font-semibold transition sm:text-xs ${
-                index === step
-                  ? 'border-gold-500/50 bg-gold-500/15 text-gold-300'
-                  : index < step
-                    ? 'border-white/10 bg-white/5 text-cream-200 hover:bg-white/10'
-                    : 'border-white/5 bg-white/[0.02] text-cream-300/40'
-              }`}
-            >
-              {index < step ? <Check className="mx-auto mb-1 size-4" /> : <span className="mb-1 block text-base">{index + 1}</span>}
-              {t(`tournament.${key}`)}
-            </button>
-          </li>
-        ))}
-      </ol>
+      <nav aria-label="Étapes de création">
+        <ol className="grid grid-cols-4 gap-1.5">
+          {STEPS.map((key, index) => {
+            const state = index === step ? 'current' : index < step ? 'done' : 'todo';
+            return (
+              <li key={key}>
+                <button
+                  type="button"
+                  onClick={() => index < step && setStep(index)}
+                  disabled={index > step}
+                  aria-current={state === 'current' ? 'step' : undefined}
+                  className={`flex min-h-14 w-full flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] border px-1.5 py-2 text-center text-[10.5px] font-semibold transition-colors sm:min-h-11 sm:flex-row sm:gap-1.5 sm:text-[12px] ${
+                    state === 'current'
+                      ? 'border-gold-500/45 bg-gold-500/[0.12] text-gold-200'
+                      : state === 'done'
+                        ? 'border-white/[0.09] bg-white/[0.04] text-cream-200 hover:bg-white/[0.07]'
+                        : 'border-white/[0.05] bg-white/[0.012] text-cream-500'
+                  }`}
+                >
+                  <span
+                    className={`grid size-4 shrink-0 place-items-center rounded-full text-[9.5px] font-bold ${
+                      state === 'current'
+                        ? 'bg-gold-500 text-night-950'
+                        : state === 'done'
+                          ? 'bg-success-500/25 text-success-300'
+                          : 'bg-white/[0.06] text-cream-500'
+                    }`}
+                    aria-hidden
+                  >
+                    {state === 'done' ? <Check className="size-3" strokeWidth={3} /> : index + 1}
+                  </span>
+                  <span className="truncate">{t(`tournament.${key}`)}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
 
       {step === 0 ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <h2 className="mb-4 text-lg font-semibold text-cream-50">{t('tournament.stepInfo')}</h2>
-            <div className="space-y-4">
-              <Field label={t('tournament.name')}>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+          <Card className="p-4 sm:p-5">
+            <h2 className="font-display text-xl text-cream-50">{t('tournament.stepInfo')}</h2>
+            <div className="mt-4 space-y-4">
+              <Field label={t('tournament.name')} htmlFor="tournament-name">
                 <Input
+                  id="tournament-name"
                   value={name}
                   maxLength={100}
                   onChange={(event) => setName(event.target.value)}
                   placeholder="Tournoi du vendredi"
                 />
               </Field>
-              <Field label={t('tournament.chipCase')} hint={selectedChipCase ? `${selectedChipCase.chipTypes.length} valeurs de jetons` : undefined}>
-                <Select value={chipCaseId} onChange={(event) => setChipCaseId(event.target.value)}>
+              <Field
+                label={t('tournament.chipCase')}
+                htmlFor="tournament-chip-case"
+                hint={
+                  selectedChipCase
+                    ? `${selectedChipCase.chipTypes.length} valeurs de jetons disponibles`
+                    : undefined
+                }
+              >
+                <Select
+                  id="tournament-chip-case"
+                  value={chipCaseId}
+                  onChange={(event) => setChipCaseId(event.target.value)}
+                >
                   {chipCases.length === 0 ? <option value="">Aucune mallette</option> : null}
                   {chipCases.map((chipCase) => (
                     <option key={chipCase.id} value={chipCase.id}>
@@ -437,13 +533,24 @@ export function TournamentNewPage() {
                 </Select>
               </Field>
               {chipCases.length === 0 ? (
-                <div className="rounded-xl border border-amber-400/30 bg-amber-950/20 p-3 text-sm text-amber-100">
-                  <Layers3 className="mr-2 inline size-4" />
-                  Créez d’abord une <Link to="/mallettes/nouvelle" className="font-semibold underline">mallette de jetons</Link>.
+                <div className="flex items-start gap-2 rounded-[var(--radius-md)] border border-warning-500/25 bg-warning-500/[0.08] p-3 text-[12.5px] leading-relaxed text-warning-300">
+                  <Layers3 className="mt-0.5 size-4 shrink-0" aria-hidden />
+                  <span>
+                    Créez d’abord une{' '}
+                    <Link to="/mallettes/nouvelle" className="font-semibold underline">
+                      mallette de jetons
+                    </Link>
+                    .
+                  </span>
                 </div>
               ) : null}
-              <Field label={t('tournament.preset')}>
+              <Field
+                label={t('tournament.preset')}
+                htmlFor="tournament-preset"
+                hint="Préremplit la cave, les blindes et les options."
+              >
                 <Select
+                  id="tournament-preset"
                   value={presetId}
                   onChange={(event) => {
                     setPresetId(event.target.value);
@@ -451,37 +558,45 @@ export function TournamentNewPage() {
                   }}
                 >
                   <option value="">— {t('common.none')} —</option>
-                  {(presetsQuery.data?.presets ?? []).map((preset) => (
-                    <option key={preset.id} value={preset.id}>
-                      {preset.name}
-                    </option>
-                  ))}
+                  {(presetsQuery.data?.presets ?? [])
+                    .filter((preset) => !preset.archived)
+                    .map((preset) => (
+                      <option key={preset.id} value={preset.id}>
+                        {preset.name}
+                      </option>
+                    ))}
                 </Select>
               </Field>
             </div>
           </Card>
 
-          <Card>
-            <h2 className="mb-4 text-lg font-semibold text-cream-50">Résumé de la mallette</h2>
+          <Card className="p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-display text-xl text-cream-50">Résumé de la mallette</h2>
+              {selectedChipCase ? (
+                <Badge tone="neutral">{selectedChipCase.chipTypes.length} valeurs</Badge>
+              ) : null}
+            </div>
             {selectedChipCase ? (
               <>
-                <div className="space-y-2">
+                <ul className="mt-3 space-y-1.5">
                   {selectedChipCase.chipTypes.map((type) => (
-                    <div key={type.id} className="flex items-center gap-3 text-sm">
+                    <li key={type.id} className="flex items-center gap-2.5 text-[13px]">
                       <span
-                        className="size-5 rounded-full ring-1 ring-white/25"
+                        className="chip-swatch size-4"
                         style={{ backgroundColor: type.color }}
+                        aria-hidden
                       />
-                      <span className="flex-1 text-cream-200">{type.label}</span>
-                      <span className="tabular text-cream-300/60">
+                      <span className="flex-1 truncate text-cream-200">{type.label}</span>
+                      <span className="tabular text-cream-400">
                         {formatChips(type.value)} × {formatChips(type.quantity)}
                       </span>
-                    </div>
+                    </li>
                   ))}
-                </div>
-                <div className="mt-4 border-t border-white/10 pt-3 text-sm text-cream-300/70">
-                  Valeur totale :{' '}
-                  <span className="font-semibold text-cream-50">
+                </ul>
+                <div className="mt-4 flex items-center justify-between gap-2 rounded-[var(--radius-sm)] border border-white/[0.06] bg-white/[0.025] px-3 py-2 text-[12px]">
+                  <span className="text-cream-400">Valeur totale</span>
+                  <span className="tabular font-semibold text-cream-50">
                     {formatChips(
                       selectedChipCase.chipTypes.reduce(
                         (total, type) => total + type.value * type.quantity,
@@ -492,32 +607,36 @@ export function TournamentNewPage() {
                 </div>
               </>
             ) : (
-              <p className="text-sm text-cream-300/60">Sélectionnez une mallette.</p>
+              <p className="mt-3 text-sm text-cream-400">Sélectionnez une mallette.</p>
             )}
           </Card>
         </div>
       ) : null}
 
       {step === 1 ? (
-        <div className="grid gap-4 lg:grid-cols-[1fr_1.1fr]">
-          <Card>
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-cream-50">
-              <Users className="size-5 text-gold-400" />
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
+          <Card className="p-4 sm:p-5">
+            <h2 className="flex items-center gap-2 font-display text-xl text-cream-50">
+              <Users className="size-4 text-gold-400" aria-hidden />
               {t('tournament.stepChips')}
             </h2>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label={t('tournament.playersExpected')}>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <Field label={t('tournament.playersExpected')} htmlFor="players-expected">
                 <Input
+                  id="players-expected"
                   type="number"
+                  inputMode="numeric"
                   min={2}
                   max={200}
                   value={players}
                   onChange={(event) => setPlayers(Number(event.target.value) || 2)}
                 />
               </Field>
-              <Field label={t('tournament.buyIn')}>
+              <Field label={t('tournament.buyIn')} htmlFor="target-buy-in">
                 <Input
+                  id="target-buy-in"
                   type="number"
+                  inputMode="numeric"
                   min={1}
                   step={100}
                   value={targetBuyIn}
@@ -528,18 +647,22 @@ export function TournamentNewPage() {
                   }}
                 />
               </Field>
-              <Field label={t('tournament.startingStack')}>
+              <Field label={t('tournament.startingStack')} htmlFor="starting-stack">
                 <Input
+                  id="starting-stack"
                   type="number"
+                  inputMode="numeric"
                   min={1}
                   step={100}
                   value={startingStack}
                   onChange={(event) => setStartingStack(Number(event.target.value) || 1)}
                 />
               </Field>
-              <Field label="Jetons max / joueur">
+              <Field label="Jetons max / joueur" htmlFor="max-chips">
                 <Input
+                  id="max-chips"
                   type="number"
+                  inputMode="numeric"
                   min={5}
                   max={200}
                   value={maxChipsPerPlayer}
@@ -548,16 +671,22 @@ export function TournamentNewPage() {
               </Field>
             </div>
 
-            <div className="mt-4 flex gap-1 rounded-xl border border-white/10 bg-black/20 p-1">
+            <div
+              role="tablist"
+              aria-label="Mode de distribution des jetons"
+              className="mt-4 flex gap-1 rounded-[var(--radius-md)] border border-white/[0.08] bg-night-950/60 p-1"
+            >
               {(['AUTO', 'MANUAL'] as const).map((option) => (
                 <button
                   key={option}
                   type="button"
+                  role="tab"
+                  aria-selected={mode === option}
                   onClick={() => setMode(option)}
-                  className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                  className={`min-h-10 flex-1 rounded-[var(--radius-sm)] px-3 text-[13px] font-semibold transition-colors ${
                     mode === option
-                      ? 'bg-gold-500 text-felt-950'
-                      : 'text-cream-200/70 hover:bg-white/5'
+                      ? 'bg-gold-500 text-night-950'
+                      : 'text-cream-300 hover:bg-white/[0.05] hover:text-cream-100'
                   }`}
                 >
                   {option === 'AUTO' ? 'Automatique' : 'Manuel'}
@@ -566,107 +695,111 @@ export function TournamentNewPage() {
             </div>
 
             {mode === 'MANUAL' && selectedChipCase ? (
-              <div className="mt-4 space-y-2">
-                {selectedChipCase.chipTypes.map((type) => (
-                  <div key={type.id} className="flex items-center gap-2">
-                    <span
-                      className="size-5 rounded-full ring-1 ring-white/25"
-                      style={{ backgroundColor: type.color }}
-                    />
-                    <span className="flex-1 text-sm text-cream-200">
-                      {type.label}{' '}
-                      <span className="text-cream-300/50">({formatChips(type.value)})</span>
-                    </span>
-                    <Input
-                      type="number"
-                      min={0}
-                      className="w-20"
-                      value={manualCounts[type.id] ?? 0}
-                      onChange={(event) =>
-                        setManualCounts((current) => ({
-                          ...current,
-                          [type.id]: Number(event.target.value) || 0,
-                        }))
-                      }
-                    />
-                  </div>
-                ))}
+              <div className="mt-4">
+                <ChipCountEditor
+                  chipTypes={manualChipTypes}
+                  counts={manualCounts}
+                  commonEnabled={commonEnabled}
+                  commonCount={commonCount}
+                  players={players}
+                  onCountChange={(chipTypeId, count) =>
+                    setManualCounts((current) => ({ ...current, [chipTypeId]: count }))
+                  }
+                  onToggleCommon={toggleCommon}
+                  onCommonCountChange={setCommonCount}
+                />
               </div>
-            ) : null}
+            ) : (
+              <p className="mt-3 text-[11.5px] leading-relaxed text-cream-400">
+                {mode === 'AUTO'
+                  ? 'Pokero répartit les jetons pour approcher la cave cible avec un nombre de jetons raisonnable.'
+                  : 'Sélectionnez une mallette pour saisir la cave manuellement.'}
+              </p>
+            )}
           </Card>
 
-          <Card>
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-cream-50">
-              <Sparkles className="size-5 text-gold-400" />
-              {t('tournament.distribution')}
-            </h2>
+          <Card className="p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="flex items-center gap-2 font-display text-xl text-cream-50">
+                <Sparkles className="size-4 text-gold-400" aria-hidden />
+                {t('tournament.distribution')}
+              </h2>
+              {plan ? <Badge tone="neutral">{plan.algorithm}</Badge> : null}
+            </div>
+
             {planQuery.isFetching ? (
-              <p className="text-sm text-cream-300/60">{t('common.loading')}</p>
+              <p className="mt-3 inline-flex items-center gap-2 text-sm text-cream-400">
+                <span className="size-1.5 animate-live rounded-full bg-gold-400" aria-hidden />
+                {t('common.loading')}
+              </p>
             ) : null}
+
             {planQuery.error ? (
-              <div className="rounded-xl border border-red-400/30 bg-red-950/30 p-3 text-sm text-red-100">
+              <div
+                role="alert"
+                className="mt-3 rounded-[var(--radius-md)] border border-danger-500/30 bg-danger-500/[0.08] p-3 text-[12.5px] text-danger-300"
+              >
                 {errorMessage(planQuery.error)}
               </div>
             ) : null}
-            {planQuery.data ? (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span
-                    className={`text-sm font-medium ${
-                      planQuery.data.plan.exact ? 'text-emerald-300' : 'text-amber-300'
-                    }`}
-                  >
-                    {planQuery.data.plan.exact
-                      ? t('tournament.exactDistribution')
-                      : t('tournament.approximateDistribution', {
-                          difference: formatChips(planQuery.data.plan.difference),
-                        })}
-                  </span>
-                  <Badge tone="neutral">{planQuery.data.plan.algorithm}</Badge>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {planQuery.data.plan.counts
+
+            {plan ? (
+              <div className="mt-3 space-y-3">
+                <p
+                  className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                    plan.exact
+                      ? 'border-success-500/30 bg-success-500/10 text-success-300'
+                      : 'border-warning-500/30 bg-warning-500/10 text-warning-300'
+                  }`}
+                >
+                  {plan.exact
+                    ? t('tournament.exactDistribution')
+                    : t('tournament.approximateDistribution', {
+                        difference: formatChips(plan.difference),
+                      })}
+                </p>
+
+                <ul className="space-y-1.5">
+                  {plan.counts
                     .filter((count) => count.perPlayer > 0)
                     .map((count) => (
-                      <div
+                      <li
                         key={count.chipTypeId}
-                        className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-2.5 py-2 text-sm"
+                        className="flex items-center gap-2.5 rounded-[var(--radius-sm)] border border-white/[0.05] bg-white/[0.02] px-2.5 py-2 text-[13px]"
                       >
                         <span
-                          className="size-4 shrink-0 rounded-full ring-1 ring-white/25"
+                          className="chip-swatch size-4"
                           style={{ backgroundColor: count.color }}
+                          aria-hidden
                         />
                         <span className="flex-1 truncate text-cream-200">{count.label}</span>
-                        <span className="tabular font-semibold text-cream-50">
+                        <span className="tabular text-cream-400">
                           ×{count.perPlayer}
+                          <span className="ml-1.5 text-[10.5px] text-cream-500">
+                            / {formatChips(count.total)} au total
+                          </span>
                         </span>
-                      </div>
+                      </li>
                     ))}
+                </ul>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <SummaryTile
+                    label="Par joueur"
+                    value={formatChips(plan.perPlayerValue)}
+                    hint="valeur"
+                  />
+                  <SummaryTile label="Jetons" value={String(plan.perPlayerChipCount)} hint="par joueur" />
+                  <SummaryTile label="Total" value={formatChips(plan.totalValue)} hint="en jeu" />
                 </div>
-                <div className="grid grid-cols-3 gap-2 border-t border-white/10 pt-3 text-center text-xs">
-                  <div>
-                    <div className="tabular text-lg font-semibold text-cream-50">
-                      {formatChips(planQuery.data.plan.perPlayerValue)}
-                    </div>
-                    <div className="text-cream-300/50">par joueur</div>
-                  </div>
-                  <div>
-                    <div className="tabular text-lg font-semibold text-cream-50">
-                      {planQuery.data.plan.perPlayerChipCount}
-                    </div>
-                    <div className="text-cream-300/50">jetons</div>
-                  </div>
-                  <div>
-                    <div className="tabular text-lg font-semibold text-cream-50">
-                      {formatChips(planQuery.data.plan.totalValue)}
-                    </div>
-                    <div className="text-cream-300/50">total</div>
-                  </div>
-                </div>
-                {planQuery.data.plan.warnings.length > 0 ? (
-                  <ul className="space-y-1 text-xs text-amber-200/80">
-                    {planQuery.data.plan.warnings.map((warning, index) => (
-                      <li key={index}>• {warning.message}</li>
+
+                {plan.warnings.length > 0 ? (
+                  <ul className="space-y-1 rounded-[var(--radius-sm)] border border-warning-500/20 bg-warning-500/[0.06] px-3 py-2 text-[11.5px] leading-relaxed text-warning-300">
+                    {plan.warnings.map((warning, index) => (
+                      <li key={index} className="flex gap-1.5">
+                        <span aria-hidden>•</span>
+                        {warning.message}
+                      </li>
                     ))}
                   </ul>
                 ) : null}
@@ -677,23 +810,29 @@ export function TournamentNewPage() {
       ) : null}
 
       {step === 2 ? (
-        <div className="space-y-4">
-          <Card>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="flex items-center gap-2 text-lg font-semibold text-cream-50">
-                <Coffee className="size-5 text-gold-400" />
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+          <Card className="p-4 sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="flex items-center gap-2 font-display text-xl text-cream-50">
+                <Coffee className="size-4 text-gold-400" aria-hidden />
                 {t('tournament.stepBlinds')}
               </h2>
-              <div className="flex gap-1 rounded-xl border border-white/10 bg-black/20 p-1">
+              <div
+                role="tablist"
+                aria-label="Mode de structure"
+                className="flex gap-1 rounded-[var(--radius-md)] border border-white/[0.08] bg-night-950/60 p-1"
+              >
                 {[true, false].map((option) => (
                   <button
                     key={String(option)}
                     type="button"
+                    role="tab"
+                    aria-selected={autoGenerate === option}
                     onClick={() => setAutoGenerate(option)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                    className={`min-h-9 rounded-[var(--radius-sm)] px-2.5 text-[11.5px] font-semibold transition-colors ${
                       autoGenerate === option
-                        ? 'bg-gold-500 text-felt-950'
-                        : 'text-cream-200/70 hover:bg-white/5'
+                        ? 'bg-gold-500 text-night-950'
+                        : 'text-cream-300 hover:text-cream-100'
                     }`}
                   >
                     {option ? t('tournament.autoStructure') : t('tournament.manualStructure')}
@@ -707,6 +846,7 @@ export function TournamentNewPage() {
                 <Field label={t('tournament.targetDuration')}>
                   <Input
                     type="number"
+                    inputMode="numeric"
                     min={10}
                     max={1440}
                     value={targetDurationMinutes}
@@ -716,6 +856,7 @@ export function TournamentNewPage() {
                 <Field label={t('tournament.levelDuration')}>
                   <Input
                     type="number"
+                    inputMode="numeric"
                     min={1}
                     max={120}
                     value={levelDurationMinutes}
@@ -725,6 +866,7 @@ export function TournamentNewPage() {
                 <Field label={t('tournament.breakDuration')}>
                   <Input
                     type="number"
+                    inputMode="numeric"
                     min={0}
                     max={120}
                     value={breakDurationMinutes}
@@ -734,6 +876,7 @@ export function TournamentNewPage() {
                 <Field label={t('tournament.breakEvery')}>
                   <Input
                     type="number"
+                    inputMode="numeric"
                     min={0}
                     max={20}
                     value={breakEveryLevels}
@@ -743,6 +886,7 @@ export function TournamentNewPage() {
                 <Field label={t('tournament.roundUnit')}>
                   <Input
                     type="number"
+                    inputMode="numeric"
                     min={1}
                     value={roundUnit}
                     onChange={(event) => setRoundUnit(Number(event.target.value) || 25)}
@@ -751,6 +895,7 @@ export function TournamentNewPage() {
                 <Field label="Ante dès le niveau">
                   <Input
                     type="number"
+                    inputMode="numeric"
                     min={1}
                     max={100}
                     value={anteFromLevel}
@@ -760,6 +905,7 @@ export function TournamentNewPage() {
                 <Field label="SB de départ" hint="Vide = 100 BB">
                   <Input
                     type="number"
+                    inputMode="numeric"
                     min={1}
                     value={startingSmallBlind}
                     onChange={(event) => setStartingSmallBlind(event.target.value)}
@@ -768,6 +914,7 @@ export function TournamentNewPage() {
                 <Field label="BB de départ" hint="Vide = 2 × SB">
                   <Input
                     type="number"
+                    inputMode="numeric"
                     min={1}
                     value={startingBigBlind}
                     onChange={(event) => setStartingBigBlind(event.target.value)}
@@ -776,7 +923,7 @@ export function TournamentNewPage() {
               </div>
             ) : (
               <div className="mt-4 space-y-2">
-                <div className="hidden grid-cols-[3rem_1fr_1fr_1fr_5rem_2.5rem] gap-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-cream-300/50 sm:grid">
+                <div className="hidden grid-cols-[3rem_1fr_1fr_1fr_5rem_2.5rem] gap-2 px-1 text-[9.5px] font-bold uppercase tracking-[0.13em] text-cream-400 sm:grid">
                   <span>Type</span>
                   <span>SB</span>
                   <span>BB</span>
@@ -787,10 +934,10 @@ export function TournamentNewPage() {
                 {manualLevels.map((level, index) => (
                   <div
                     key={index}
-                    className="grid grid-cols-2 gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-2 sm:grid-cols-[3rem_1fr_1fr_1fr_5rem_2.5rem] sm:items-center"
+                    className="grid grid-cols-2 gap-2 rounded-[var(--radius-md)] border border-white/[0.07] bg-white/[0.018] p-2 sm:grid-cols-[3rem_1fr_1fr_1fr_5rem_2.5rem] sm:items-center"
                   >
                     <Select
-                      aria-label="Type de niveau"
+                      aria-label={`Type du niveau ${index + 1}`}
                       value={level.kind}
                       onChange={(event) =>
                         updateManualLevel(index, {
@@ -804,31 +951,43 @@ export function TournamentNewPage() {
                     </Select>
                     <Input
                       type="number"
+                      inputMode="numeric"
                       min={1}
                       placeholder="SB"
+                      aria-label={`Petite blinde du niveau ${index + 1}`}
                       disabled={level.kind === 'BREAK'}
                       value={level.smallBlind}
-                      onChange={(event) => updateManualLevel(index, { smallBlind: event.target.value })}
+                      onChange={(event) =>
+                        updateManualLevel(index, { smallBlind: event.target.value })
+                      }
                     />
                     <Input
                       type="number"
+                      inputMode="numeric"
                       min={1}
                       placeholder="BB"
+                      aria-label={`Grosse blinde du niveau ${index + 1}`}
                       disabled={level.kind === 'BREAK'}
                       value={level.bigBlind}
-                      onChange={(event) => updateManualLevel(index, { bigBlind: event.target.value })}
+                      onChange={(event) =>
+                        updateManualLevel(index, { bigBlind: event.target.value })
+                      }
                     />
                     <Input
                       type="number"
+                      inputMode="numeric"
                       min={0}
                       placeholder="Ante"
+                      aria-label={`Ante du niveau ${index + 1}`}
                       disabled={level.kind === 'BREAK'}
                       value={level.ante}
                       onChange={(event) => updateManualLevel(index, { ante: event.target.value })}
                     />
                     <Input
                       type="number"
+                      inputMode="numeric"
                       min={1}
+                      aria-label={`Durée du niveau ${index + 1} en minutes`}
                       value={level.durationMinutes}
                       onChange={(event) =>
                         updateManualLevel(index, { durationMinutes: event.target.value })
@@ -836,13 +995,13 @@ export function TournamentNewPage() {
                     />
                     <button
                       type="button"
-                      aria-label={t('common.delete')}
+                      aria-label={`Supprimer le niveau ${index + 1}`}
                       onClick={() =>
                         setManualLevels((current) => current.filter((_, i) => i !== index))
                       }
-                      className="grid size-8 place-items-center rounded-lg text-cream-300/50 hover:bg-red-500/10 hover:text-red-300"
+                      className="grid size-10 place-items-center justify-self-end rounded-[var(--radius-sm)] text-cream-400 transition hover:bg-danger-500/10 hover:text-danger-300"
                     >
-                      <Trash2 className="size-4" />
+                      <Trash2 className="size-4" aria-hidden />
                     </button>
                   </div>
                 ))}
@@ -857,47 +1016,48 @@ export function TournamentNewPage() {
                     ])
                   }
                 >
-                  <Plus className="size-4" />
+                  <Plus className="size-4" aria-hidden />
                   Ajouter un niveau
                 </Button>
               </div>
             )}
           </Card>
 
-          <Card>
-            <h2 className="mb-3 text-lg font-semibold text-cream-50">Aperçu de la structure</h2>
-            <p className="mb-3 text-xs text-cream-300/60">
+          <Card className="p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-display text-xl text-cream-50">Aperçu de la structure</h2>
+              <Badge tone="neutral">{playLevels} niveaux</Badge>
+            </div>
+            <p className="mt-1 text-[11.5px] text-cream-400">
               {autoGenerate && generatedLevels
-                ? `${generatedLevels.levels.filter((level) => level.kind === 'PLAY').length} niveaux de jeu · ${
-                    generatedLevels.totalDurationMinutes
-                  } min au total`
+                ? `${playLevels} niveaux de jeu · ${formatMinutes(generatedLevels.totalDurationMinutes)} au total`
                 : `${manualLevels.length} segments`}
             </p>
-            <div className="max-h-72 overflow-y-auto rounded-xl border border-white/10">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-felt-900/95 text-left text-[10px] uppercase tracking-wider text-cream-300/60">
+            <div className="mt-3 max-h-72 overflow-y-auto rounded-[var(--radius-md)] border border-white/[0.08]">
+              <table className="w-full text-[13px]">
+                <thead className="sticky top-0 bg-night-850 text-left text-[9.5px] font-bold uppercase tracking-[0.13em] text-cream-400">
                   <tr>
-                    <th className="px-3 py-2">#</th>
-                    <th className="px-3 py-2">Blindes</th>
-                    <th className="px-3 py-2">Ante</th>
-                    <th className="px-3 py-2 text-right">Durée</th>
+                    <th className="px-3 py-2 font-semibold">#</th>
+                    <th className="px-3 py-2 font-semibold">Blindes</th>
+                    <th className="px-3 py-2 font-semibold">Ante</th>
+                    <th className="px-3 py-2 text-right font-semibold">Durée</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(autoGenerate ? generatedLevels?.levels ?? [] : manualLevels).map((level, index) => {
+                  {previewLevels.map((level, index) => {
                     const isBreak = level.kind === 'BREAK';
                     return (
-                      <tr key={index} className="border-t border-white/5">
-                        <td className="px-3 py-1.5 text-cream-300/50">{index + 1}</td>
+                      <tr key={index} className="border-t border-white/[0.05]">
+                        <td className="px-3 py-1.5 text-cream-500">{index + 1}</td>
                         <td className="px-3 py-1.5 tabular text-cream-100">
                           {isBreak
                             ? 'Pause'
                             : `${formatChips(Number(level.smallBlind))} / ${formatChips(Number(level.bigBlind))}`}
                         </td>
-                        <td className="px-3 py-1.5 tabular text-cream-300/70">
+                        <td className="px-3 py-1.5 tabular text-cream-400">
                           {isBreak || !level.ante ? '—' : formatChips(Number(level.ante))}
                         </td>
-                        <td className="px-3 py-1.5 text-right text-cream-300/70">
+                        <td className="px-3 py-1.5 text-right text-cream-400">
                           {level.durationMinutes} min
                         </td>
                       </tr>
@@ -906,9 +1066,12 @@ export function TournamentNewPage() {
                 </tbody>
               </table>
             </div>
-            {generatedLevels ? (
-              <p className="mt-3 text-xs text-cream-300/60">
-                Durée totale estimée : <strong className="text-cream-100">{formatMinutes(generatedLevels.totalDurationMinutes)}</strong>
+            {generatedLevels && autoGenerate ? (
+              <p className="mt-3 text-[11.5px] text-cream-400">
+                Durée totale estimée :{' '}
+                <strong className="text-cream-100">
+                  {formatMinutes(generatedLevels.totalDurationMinutes)}
+                </strong>
               </p>
             ) : null}
           </Card>
@@ -916,16 +1079,22 @@ export function TournamentNewPage() {
       ) : null}
 
       {step === 3 ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <h2 className="mb-4 text-lg font-semibold text-cream-50">Rebuys & add-ons</h2>
-            <div className="space-y-3">
-              <Switch label="Rebuys activés" checked={rebuyEnabled} onChange={setRebuyEnabled} />
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <Card className="p-4 sm:p-5">
+            <h2 className="font-display text-xl text-cream-50">Rebuys & add-ons</h2>
+            <div className="mt-4 space-y-3">
+              <Switch
+                label="Rebuys activés"
+                hint="Recave un joueur éliminé tant que la limite n’est pas atteinte."
+                checked={rebuyEnabled}
+                onChange={setRebuyEnabled}
+              />
               {rebuyEnabled ? (
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Jusqu’au niveau">
                     <Input
                       type="number"
+                      inputMode="numeric"
                       min={1}
                       value={rebuyUntilLevel}
                       onChange={(event) => setRebuyUntilLevel(event.target.value)}
@@ -934,6 +1103,7 @@ export function TournamentNewPage() {
                   <Field label="Max par joueur" hint="Vide = illimité">
                     <Input
                       type="number"
+                      inputMode="numeric"
                       min={0}
                       value={rebuyMax}
                       onChange={(event) => {
@@ -945,12 +1115,18 @@ export function TournamentNewPage() {
                 </div>
               ) : null}
               <div className="divider" />
-              <Switch label="Add-ons activés" checked={addOnEnabled} onChange={setAddOnEnabled} />
+              <Switch
+                label="Add-ons activés"
+                hint="Complément de jetons facultatif en fin de période de rebuy."
+                checked={addOnEnabled}
+                onChange={setAddOnEnabled}
+              />
               {addOnEnabled ? (
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Valeur de l’add-on">
                     <Input
                       type="number"
+                      inputMode="numeric"
                       min={1}
                       step={100}
                       value={addOnValue}
@@ -961,6 +1137,7 @@ export function TournamentNewPage() {
                   <Field label="Au niveau">
                     <Input
                       type="number"
+                      inputMode="numeric"
                       min={1}
                       value={addOnAtLevel}
                       onChange={(event) => setAddOnAtLevel(event.target.value)}
@@ -971,9 +1148,9 @@ export function TournamentNewPage() {
             </div>
           </Card>
 
-          <Card>
-            <h2 className="mb-4 text-lg font-semibold text-cream-50">Affichage & sécurité</h2>
-            <div className="space-y-3">
+          <Card className="p-4 sm:p-5">
+            <h2 className="font-display text-xl text-cream-50">Affichage & sécurité</h2>
+            <div className="mt-4 space-y-2">
               <Switch
                 label="Classement public"
                 hint="Visible sur le lien spectateur une fois le tournoi terminé."
@@ -989,8 +1166,10 @@ export function TournamentNewPage() {
               <Field
                 label={`${t('tournament.pin')} (${t('common.optional')})`}
                 hint={t('tournament.pinHint')}
+                htmlFor="tournament-pin"
               >
                 <Input
+                  id="tournament-pin"
                   inputMode="numeric"
                   pattern="\d{4,8}"
                   maxLength={8}
@@ -1002,56 +1181,43 @@ export function TournamentNewPage() {
             </div>
           </Card>
 
-          <Card className="lg:col-span-2">
-            <h2 className="mb-4 text-lg font-semibold text-cream-50">Récapitulatif</h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-xl bg-white/[0.03] p-3">
-                <div className="text-[10px] uppercase tracking-wide text-cream-300/50">Tournoi</div>
-                <div className="mt-1 truncate font-semibold text-cream-50">{name || '—'}</div>
-                <div className="text-xs text-cream-300/60">{selectedChipCase?.name ?? '—'}</div>
-              </div>
-              <div className="rounded-xl bg-white/[0.03] p-3">
-                <div className="text-[10px] uppercase tracking-wide text-cream-300/50">Cave</div>
-                <div className="mt-1 tabular font-semibold text-cream-50">
-                  {formatChips(targetBuyIn)}
-                </div>
-                <div className="text-xs text-cream-300/60">
-                  {players} joueurs · 100 BB
-                </div>
-              </div>
-              <div className="rounded-xl bg-white/[0.03] p-3">
-                <div className="text-[10px] uppercase tracking-wide text-cream-300/50">Structure</div>
-                <div className="mt-1 font-semibold text-cream-50">
-                  {autoGenerate
-                    ? `${generatedLevels?.levels.filter((level) => level.kind === 'PLAY').length ?? 0} niveaux`
-                    : `${manualLevels.length} segments`}
-                </div>
-                <div className="text-xs text-cream-300/60">
-                  {autoGenerate ? formatMinutes(targetDurationMinutes) : 'sur mesure'}
-                </div>
-              </div>
-              <div className="rounded-xl bg-white/[0.03] p-3">
-                <div className="text-[10px] uppercase tracking-wide text-cream-300/50">Options</div>
-                <div className="mt-1 font-semibold text-cream-50">
-                  {rebuyEnabled ? 'Rebuys' : 'Sans rebuy'}
-                  {addOnEnabled ? ' + add-on' : ''}
-                </div>
-                <div className="text-xs text-cream-300/60">
-                  {pin ? 'PIN activé' : 'Sans PIN'}
-                </div>
-              </div>
+          <Card className="p-4 sm:p-5 lg:col-span-2">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-display text-xl text-cream-50">Récapitulatif</h2>
+              <Badge tone="gold">{name || 'Sans nom'}</Badge>
             </div>
-
-            {planQuery.data ? (
-              <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-cream-300/70">
-                <span>
-                  <WalletCards className="mr-1.5 inline size-4" />
-                  {planQuery.data.plan.perPlayerChipCount} jetons / joueur
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <SummaryTile label="Mallette" value={selectedChipCase?.name ?? '—'} />
+              <SummaryTile label="Cave" value={formatChips(targetBuyIn)} hint={`${players} joueurs`} />
+              <SummaryTile
+                label="Structure"
+                value={`${playLevels} niveaux`}
+                hint={autoGenerate ? formatMinutes(targetDurationMinutes) : 'sur mesure'}
+              />
+              <SummaryTile
+                label="Options"
+                value={
+                  [rebuyEnabled ? 'Rebuys' : null, addOnEnabled ? 'Add-on' : null]
+                    .filter(Boolean)
+                    .join(' + ') || 'Aucune'
+                }
+                hint={pin ? 'PIN activé' : 'Sans PIN'}
+              />
+            </div>
+            {plan ? (
+              <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-[12.5px] text-cream-400">
+                <span className="inline-flex items-center gap-1.5">
+                  <WalletCards className="size-3.5 text-gold-500" aria-hidden />
+                  {plan.perPlayerChipCount} jetons / joueur
                 </span>
                 <span>
-                  Total{' '}
-                  <strong className="text-cream-100">
-                    {formatChips(planQuery.data.plan.totalValue)}
+                  Total en jeu{' '}
+                  <strong className="tabular text-cream-100">{formatChips(plan.totalValue)}</strong>
+                </span>
+                <span>
+                  Cave réellement distribuée{' '}
+                  <strong className="tabular text-cream-100">
+                    {formatChips(plan.perPlayerValue)}
                   </strong>
                 </span>
               </div>
@@ -1061,32 +1227,39 @@ export function TournamentNewPage() {
       ) : null}
 
       {formError ? (
-        <div className="rounded-xl border border-red-400/30 bg-red-950/30 px-4 py-3 text-sm text-red-100">
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-[var(--radius-md)] border border-danger-500/30 bg-danger-500/[0.08] px-3.5 py-3 text-[12.5px] leading-relaxed text-danger-300"
+        >
+          <span className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-danger-500/25 text-[10px] font-bold text-danger-300">
+            !
+          </span>
           {formError}
         </div>
       ) : null}
 
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
         <Button
           type="button"
           variant="ghost"
           onClick={() => (step === 0 ? navigate('/') : setStep((current) => current - 1))}
         >
-          <ArrowLeft className="size-4" />
+          <ArrowLeft className="size-4" aria-hidden />
           {t('common.previous')}
         </Button>
         {step < STEPS.length - 1 ? (
           <Button type="button" onClick={next}>
             {t('common.next')}
-            <ArrowRight className="size-4" />
+            <ArrowRight className="size-4" aria-hidden />
           </Button>
         ) : (
           <Button type="button" onClick={submit} loading={createMutation.isPending}>
-            <Check className="size-4" />
+            <Check className="size-4" aria-hidden />
             {t('common.create')}
           </Button>
         )}
       </div>
+
     </div>
   );
 }
