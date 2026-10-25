@@ -24,6 +24,18 @@ afterAll(async () => {
   await closeApp(app);
 });
 
+describe('santé', () => {
+  it('expose /health et l’alias public /api/health', async () => {
+    for (const url of ['/health', '/api/health']) {
+      const response = await app.inject({ method: 'GET', url });
+      expect(response.statusCode).toBe(200);
+      const body = response.json() as { status: string; dbLatencyMs: number };
+      expect(body.status).toBe('ok');
+      expect(body.dbLatencyMs).toBeGreaterThanOrEqual(0);
+    }
+  });
+});
+
 describe('authentification', () => {
   it('inscrit un utilisateur et ouvre une session', async () => {
     const client = await registerUser(app);

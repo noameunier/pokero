@@ -135,7 +135,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     });
   });
 
-  app.get('/health', async () => {
+  async function health() {
     const startedAt = Date.now();
     await app.prisma.$queryRaw`SELECT 1`;
     return {
@@ -145,7 +145,12 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
       dbLatencyMs: Date.now() - startedAt,
       now: new Date().toISOString(),
     };
-  });
+  }
+
+  app.get('/health', health);
+  // Alias public : le vhost Caddy ne proxifie vers l'API que `/api/*` et
+  // `/socket.io/*`. Cet alias permet une supervision HTTPS sans exposer la base.
+  app.get('/api/health', health);
 
   await app.register(
     async (api) => {
