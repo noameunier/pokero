@@ -203,7 +203,24 @@ Aucun changement n’a été apporté aux routes API, aux schémas Zod, au sché
 Prisma, aux migrations, à l’authentification, au CSRF, au rate limiting, au PIN,
 au chrono serveur, au WebSocket ni à l’isolation multi-organisateurs.
 
-## 9. Bibliothèques
+## 9. Vérification en production
+
+Déploiement effectué le 25 octobre 2026 après fusion sur `main` :
+
+| Contrôle | Résultat |
+|---|---|
+| `https://pokero.noameunier.fr/` | 200 |
+| `https://pokero.noameunier.fr/api/health` | 200, base à 2 ms |
+| Conteneurs `api` / `web` / `db` | healthy |
+| Thème navigateur (`theme-color`) | `#070908` |
+| Fond calculé | `rgb(7, 9, 8)` |
+| Police des titres | Instrument Serif chargée |
+| Erreurs console sur `/connexion` | 0 |
+| Mise en page 320 × 640 | aucun débordement, formulaire visible sans scroll |
+
+Le compte de production `NonoPoker` n’a pas été utilisé ni modifié.
+
+## 10. Bibliothèques
 
 | Ajout | Version | Justification |
 |---|---|---|
@@ -214,7 +231,7 @@ Aucune bibliothèque de composants UI n’a été ajoutée. `lucide-react` et
 `qrcode.react` étaient déjà présents. Le reste (boutons, cartes, modales,
 onglets, switch, toasts) est interne.
 
-## 10. Limites et points ouverts
+## 11. Limites et points ouverts
 
 - Validation sur appareils réels impossible ici : pas de macOS/Xcode, pas
   d’émulateur Android (KVM indisponible), pas de comptes Apple/Google.
@@ -223,4 +240,5 @@ onglets, switch, toasts) est interne.
 - Les tests E2E laissent des comptes `@pokero.test` en base de développement
   lorsque le nettoyage échoue ; ce sont des comptes de test, pas des comptes
   utilisateur.
-- La refonte n’a pas été déployée en production au moment de ce rapport.
+- La refonte est déployée en production ; les tests sur appareils réels restent
+  à faire.

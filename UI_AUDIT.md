@@ -164,6 +164,7 @@ Correction : passage à des **tokens pleins**. Il reste aujourd’hui **0** coul
 | Build Vite | ✅ (`index.js` ≈ 623 kB minifié, ≈ 176 kB gzip) |
 | Tests unitaires | 47 domaine + 29 API ✅ |
 | E2E | 3/3 ✅ |
+| Production HTTPS (thème, polices, console) | ✅ |
 
 ## 6. Non-régression fonctionnelle
 

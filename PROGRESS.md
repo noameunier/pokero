@@ -1,19 +1,20 @@
 # PROGRESS — Pokero
 
-Dernière mise à jour : 2026-10-25 12:20 UTC
+Dernière mise à jour : 2026-10-25 12:30 UTC
 
 ## Statut global
 
-**V1 web déployée en production** sur <https://pokero.noameunier.fr>.
+**Application web déployée en production** sur <https://pokero.noameunier.fr>.
 
 Le parcours organisateur complet fonctionne de bout en bout : compte, mallettes de
 jetons, presets, création de tournoi, joueurs, caves/rebuys/add-ons, chronomètre
 serveur, éliminations, classement, clôture, liens spectateurs révocables,
 statistiques et suppression de compte RGPD.
 
-La refonte UI/UX est terminée sur la branche `redesign/ui-ux` et validée en
-local (typecheck, build, 76 tests unitaires/intégration, 3 scénarios E2E,
-captures avant/après). Elle n'est pas encore fusionnée ni déployée en production.
+La refonte UI/UX est terminée, fusionnée sur `main` et **déployée en
+production** le 25 octobre 2026. Elle a été validée en local (typecheck, build,
+76 tests unitaires/intégration, 3 scénarios E2E, captures avant/après) puis
+vérifiée en HTTPS (santé, thème, polices, absence d'erreur console).
 
 L'application mobile Capacitor reste à faire (phase P9). Aucun test sur appareil
 réel, aucune compilation iOS et aucune publication sur les stores ne sont
@@ -34,7 +35,7 @@ revendiqués.
 | P8 — Qualité & docs | ✅ Terminé | RGPD, seed, docs, tests production, en-têtes de sécurité |
 | P9 — Mobile | ⏳ À faire | Capacitor Android/iOS (hors V1 web) |
 | P10 — Livraison | 🔄 En cours | Rapport final, sauvegardes, supervision |
-| P11 — Refonte UI/UX | ✅ Terminé (branche) | Design system, tous les écrans, mobile, accessibilité, captures |
+| P11 — Refonte UI/UX | ✅ Déployé | Design system, tous les écrans, mobile, accessibilité, captures |
 
 ## Réalisé
 
@@ -149,6 +150,7 @@ revendiqués.
 | `pnpm --filter @pokero/web typecheck` | ✅ |
 | `pnpm --filter @pokero/web build` | ✅ |
 | `pnpm --filter @pokero/web test:e2e` | 3/3 ✅ |
+| Refonte en production (HTTPS, thème, polices, console) | ✅ |
 | Captures Playwright avant/après | 59 avant, 135 après + 5 états ✅ |
 | Débordement horizontal (320 px, 13 routes) | 0 ✅ |
 | Smoke test HTTPS production (compte, mallette, tournoi, chrono, CSRF, idempotence, conflit de version, spectateur, révocation, suppression) | ✅ |
@@ -173,13 +175,12 @@ revendiqués.
 
 ## Prochaines étapes
 
-1. Fusionner `redesign/ui-ux` et redéployer la production.
-2. Ajouter une sauvegarde PostgreSQL planifiée et tester une restauration.
-3. Mettre en place une supervision (uptime, logs, alertes).
-4. Découper le bundle web et optimiser les images Docker.
-5. Ajouter un vrai SMTP puis activer `EMAIL_VERIFICATION_REQUIRED=true`.
-6. Démarrer la phase mobile Capacitor (Android debug puis iOS sur macOS).
-7. Compléter les tests E2E (reprise après coupure, PIN, multi-organisateurs,
+1. Ajouter une sauvegarde PostgreSQL planifiée et tester une restauration.
+2. Mettre en place une supervision (uptime, logs, alertes).
+3. Découper le bundle web et optimiser les images Docker.
+4. Ajouter un vrai SMTP puis activer `EMAIL_VERIFICATION_REQUIRED=true`.
+5. Démarrer la phase mobile Capacitor (Android debug puis iOS sur macOS).
+6. Compléter les tests E2E (reprise après coupure, PIN, multi-organisateurs,
    statistiques publiques, export RGPD).
 
 ## Blocages
