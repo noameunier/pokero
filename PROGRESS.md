@@ -73,7 +73,7 @@ revendiqués.
   affichée une seule fois à la création.
 - Statistiques personnelles et profils publics opt-in.
 - RGPD : export JSON complet, suppression avec anonymisation des participations.
-- **28 tests d'intégration verts**, `tsc --noEmit` vert.
+- **29 tests d'intégration verts**, `tsc --noEmit` vert.
 
 ### Web (`apps/web`)
 
@@ -120,7 +120,7 @@ revendiqués.
 | `pnpm --filter @pokero/domain test` | 47/47 ✅ |
 | `pnpm --filter @pokero/domain typecheck` | ✅ |
 | `pnpm --filter @pokero/contracts typecheck` | ✅ |
-| `pnpm --filter @pokero/api test` | 28/28 ✅ |
+| `pnpm --filter @pokero/api test` | 29/29 ✅ |
 | `pnpm --filter @pokero/api typecheck` | ✅ |
 | `pnpm --filter @pokero/web typecheck` | ✅ |
 | `pnpm --filter @pokero/web build` | ✅ |
@@ -130,6 +130,7 @@ revendiqués.
 | `./infra/docker/backup.sh` + restauration dans une base temporaire | Archive valide, 3 tables contrôlées ✅ |
 | `https://pokero.noameunier.fr/` | 200 ✅ |
 | `https://pokero.noameunier.fr/api/auth/me` | 200 ✅ |
+| `https://pokero.noameunier.fr/api/health` | 200 ✅ |
 | `https://opencode.noameunier.fr/` | 200 ✅ |
 
 ## Avertissements connus (non bloquants)

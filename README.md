@@ -70,7 +70,7 @@ Variables principales de `apps/api/.env` :
 
 ```bash
 pnpm --filter @pokero/domain test       # 47 tests unitaires
-pnpm --filter @pokero/api test          # 28 tests d'intégration (base pokero_test)
+pnpm --filter @pokero/api test          # 29 tests d'intégration (base pokero_test)
 pnpm --filter @pokero/web test:e2e      # scénario Playwright complet
 pnpm typecheck                          # tous les paquets
 pnpm build                              # API + web
@@ -111,6 +111,7 @@ sg docker -c 'docker compose -f docker-compose.prod.yml ps'
 
 La migration Prisma s'exécute dans un service one-shot avant le démarrage de
 l'API. Les healthchecks empêchent le web de démarrer si l'API est indisponible.
+Supervision : `GET https://pokero.noameunier.fr/api/health`.
 
 ### Sauvegarde
 
