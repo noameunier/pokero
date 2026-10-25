@@ -199,13 +199,13 @@ export function PresetsPage() {
                     <PresetMetric
                       icon={<Users className="size-3.5" aria-hidden />}
                       label="Joueurs"
-                      value={String(config.buyIn?.players ?? '—')}
+                      value={String(config.buyIn?.players ?? 'N/A')}
                     />
                     <PresetMetric
                       icon={<Clock3 className="size-3.5" aria-hidden />}
                       label="Durée"
                       value={
-                        config.blinds ? formatMinutes(config.blinds.targetDurationMinutes) : '—'
+                        config.blinds ? formatMinutes(config.blinds.targetDurationMinutes) : 'N/A'
                       }
                     />
                     <PresetMetric

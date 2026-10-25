@@ -1,4 +1,4 @@
-# DESIGN_SYSTEM — Pokero
+# DESIGN_SYSTEM · Pokero
 
 Système de design de l’interface web Pokero. Il sert de référence pour toute
 évolution : les écrans doivent réutiliser les tokens et les composants décrits
@@ -197,7 +197,7 @@ saturée, aucun empilement de cartes avec ombre.
 Ne pas imbriquer plus de deux niveaux de cartes. Une carte dans une carte doit
 avoir un rôle identifiable (liste, encart de données).
 
-### Boutons — `Button`
+### Boutons (`Button`)
 
 | Variante | Style | Usage |
 |---|---|---|
@@ -227,12 +227,12 @@ d’opacité, chargement avec `aria-busy` et spinner.
   indicateur visuel or, zone tactile étendue.
 - Erreurs : jamais uniquement en rouge ; texte explicite + icône.
 
-### Badges — `Badge`
+### Badges (`Badge`)
 
 Tons : `neutral`, `success`, `warning`, `danger`, `gold`. Toujours un libellé
 lisible en majuscules. Le point optionnel ne remplace jamais le texte.
 
-### Navigation — `AppShell`
+### Navigation (`AppShell`)
 
 - **Desktop (`md+`)** : en-tête collant, logo, liens principaux, bouton
   « Nouveau tournoi », menu de compte.
@@ -245,12 +245,12 @@ lisible en majuscules. Le point optionnel ne remplace jamais le texte.
 - Lien d’évitement « Aller au contenu » au focus clavier.
 - Indicateur « Hors ligne » dans l’en-tête.
 
-### Onglets — `Tabs`
+### Onglets (`Tabs`)
 
 `role="tablist"`, boutons `role="tab"`, `aria-selected`, défilement horizontal
 sans scrollbar sur mobile, pastille or sur l’onglet actif, 44 px sur tactile.
 
-### Dialogues — `Modal` / `ConfirmDialog`
+### Dialogues (`Modal` / `ConfirmDialog`)
 
 - Portail dans `document.body`.
 - Mobile : feuille ancrée en bas, coins supérieurs 26 px, poignée décorative.
@@ -259,7 +259,7 @@ sans scrollbar sur mobile, pastille or sur l’onglet actif, 44 px sur tactile.
   verrou de scroll, restitution du focus.
 - `ConfirmDialog` : ton `danger` par défaut, bouton de confirmation explicite.
 
-### Notifications — `Toast`
+### Notifications (`Toast`)
 
 - Empilées en bas, au-dessus de la navigation mobile, max 4.
 - Disparition après 5,2 s, fermeture manuelle avec zone tactile étendue.

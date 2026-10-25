@@ -19,7 +19,7 @@ import { useToast } from './Toast';
 
 export function Brand({ compact = false }: { compact?: boolean }) {
   return (
-    <Link to="/" className="group flex shrink-0 items-center gap-2.5" aria-label="Pokero — accueil">
+    <Link to="/" className="group flex shrink-0 items-center gap-2.5" aria-label="Pokero, accueil">
       <span className="relative grid size-9 place-items-center rounded-[10px] border border-gold-400/50 bg-gold-500 text-night-950 shadow-[inset_0_1px_0_rgb(255_255_255/0.35),0_6px_16px_-8px_rgb(207_169_88/0.6)] transition-colors group-hover:bg-gold-400">
         <Spade className="size-[19px]" fill="currentColor" strokeWidth={1.5} />
       </span>
@@ -215,7 +215,7 @@ export function AppShell() {
 
       <footer className="hidden border-t border-white/[0.05] px-6 py-5 md:block">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between text-[11px] text-cream-500">
-          <span>Pokero — gestion de tournois de poker</span>
+          <span>Pokero · gestion de tournois de poker</span>
           <span className="inline-flex items-center gap-1.5">
             <Spade className="size-3 text-gold-500" aria-hidden />
             Les données restent sur votre serveur

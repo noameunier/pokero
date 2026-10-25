@@ -161,7 +161,7 @@ const fr = {
     stockWarning: 'Stock insuffisant',
     levelUpSoon: 'Niveau suivant dans',
     onBreak: 'Pause',
-    structureExhausted: 'Structure épuisée — prolongez ou clôturez le tournoi.',
+    structureExhausted: 'Structure épuisée : prolongez ou clôturez le tournoi.',
     extendStructure: 'Prolonger la structure',
   },
   chipCase: {
@@ -419,7 +419,7 @@ const en = {
     stockWarning: 'Insufficient stock',
     levelUpSoon: 'Next level in',
     onBreak: 'Break',
-    structureExhausted: 'Structure exhausted — extend or complete the tournament.',
+    structureExhausted: 'Structure exhausted: extend or complete the tournament.',
     extendStructure: 'Extend structure',
   },
   chipCase: {

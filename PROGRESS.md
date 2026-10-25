@@ -1,4 +1,4 @@
-# PROGRESS — Pokero
+# PROGRESS · Pokero
 
 Dernière mise à jour : 2026-10-25 12:30 UTC
 
@@ -24,18 +24,18 @@ revendiqués.
 
 | Phase | Statut | Détail |
 |---|---|---|
-| P0 — Préparation | ✅ Terminé | Environnement vérifié, DNS + TLS + vhost Caddy opérationnels |
-| P1 — Bootstrap | ✅ Terminé | Monorepo pnpm, TypeScript strict, domaine métier testé |
-| P2 — Comptes & sécurité | ✅ Terminé | Auth Argon2id, sessions opaques, CSRF, rate limiting, PIN tournoi |
-| P3 — Domaine persistant | ✅ Terminé | Prisma 7, mallettes, inventaire, presets, réservations |
-| P4 — Tournois & chrono | ✅ Terminé | API tournois, Socket.IO, heartbeat, 3 modes de reprise |
-| P5 — Interface web | ✅ Terminé | 12 pages, PWA, i18n FR + EN, console + projection + spectateur |
-| P6 — Tests E2E | ✅ Terminé | Scénario Playwright complet A→L vert |
-| P7 — Déploiement | ✅ Terminé | Compose, migrations one-shot, HTTPS, redémarrages vérifiés |
-| P8 — Qualité & docs | ✅ Terminé | RGPD, seed, docs, tests production, en-têtes de sécurité |
-| P9 — Mobile | ⏳ À faire | Capacitor Android/iOS (hors V1 web) |
-| P10 — Livraison | 🔄 En cours | Rapport final, sauvegardes, supervision |
-| P11 — Refonte UI/UX | ✅ Déployé | Design system, tous les écrans, mobile, accessibilité, captures |
+| P0 · Préparation | ✅ Terminé | Environnement vérifié, DNS + TLS + vhost Caddy opérationnels |
+| P1 · Bootstrap | ✅ Terminé | Monorepo pnpm, TypeScript strict, domaine métier testé |
+| P2 · Comptes & sécurité | ✅ Terminé | Auth Argon2id, sessions opaques, CSRF, rate limiting, PIN tournoi |
+| P3 · Domaine persistant | ✅ Terminé | Prisma 7, mallettes, inventaire, presets, réservations |
+| P4 · Tournois & chrono | ✅ Terminé | API tournois, Socket.IO, heartbeat, 3 modes de reprise |
+| P5 · Interface web | ✅ Terminé | 12 pages, PWA, i18n FR + EN, console + projection + spectateur |
+| P6 · Tests E2E | ✅ Terminé | Scénario Playwright complet A→L vert |
+| P7 · Déploiement | ✅ Terminé | Compose, migrations one-shot, HTTPS, redémarrages vérifiés |
+| P8 · Qualité & docs | ✅ Terminé | RGPD, seed, docs, tests production, en-têtes de sécurité |
+| P9 · Mobile | ⏳ À faire | Capacitor Android/iOS (hors V1 web) |
+| P10 · Livraison | 🔄 En cours | Rapport final, sauvegardes, supervision |
+| P11 · Refonte UI/UX | ✅ Déployé | Design system, tous les écrans, mobile, accessibilité, captures |
 
 ## Réalisé
 

@@ -419,9 +419,9 @@ export function TournamentPage() {
               </span>
             </div>
             <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11.5px] text-cream-400">
-              <span className="truncate">{tournament.settings?.chipCaseName ?? '—'}</span>
+              <span className="truncate">{tournament.settings?.chipCaseName ?? 'Aucune'}</span>
               <span className="text-cream-500" aria-hidden>·</span>
-              <span>{t('common.level')} {clock?.playLevelNumber ?? '—'}</span>
+              <span>{t('common.level')} {clock?.playLevelNumber ?? 'N/A'}</span>
               <span className="text-cream-500" aria-hidden>·</span>
               <span>{t('common.players')} {tournament.participants.length}</span>
             </p>
@@ -932,10 +932,10 @@ export function TournamentPage() {
                             )}
                           </td>
                           <td className="px-3 py-2.5 tabular font-semibold">
-                            {isBreak ? '—' : formatChips(level.bigBlind)}
+                            {isBreak ? 'N/A' : formatChips(level.bigBlind)}
                           </td>
                           <td className="px-3 py-2.5 tabular text-cream-400">
-                            {level.ante ? formatChips(level.ante) : '—'}
+                            {level.ante ? formatChips(level.ante) : '0'}
                           </td>
                           <td className="px-4 py-2.5 text-right text-cream-400">
                             {level.durationMinutes} min

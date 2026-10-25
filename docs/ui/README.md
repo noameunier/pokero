@@ -1,4 +1,4 @@
-# Captures UI — Pokero
+# Captures UI · Pokero
 
 Captures Playwright de l’interface, avant et après la refonte.
 
@@ -7,16 +7,16 @@ Captures Playwright de l’interface, avant et après la refonte.
 ```
 docs/ui/
   before/
-    mobile/    21 captures — 390 × 844
-    tablet/    19 captures — 834 × 1112
-    desktop/   19 captures — 1440 × 900
+    mobile/    21 captures, 390 × 844
+    tablet/    19 captures, 834 × 1112
+    desktop/   19 captures, 1440 × 900
   after/
-    small/     25 captures — 320 × 640
-    iphone/    29 captures — 390 × 844
-    android/   25 captures — 412 × 915
-    tablet/    25 captures — 834 × 1112
-    desktop/   26 captures — 1440 × 900
-    states/     5 captures — vide, chargement, erreur
+    small/     25 captures, 320 × 640
+    iphone/    29 captures, 390 × 844
+    android/   25 captures, 412 × 915
+    tablet/    25 captures, 834 × 1112
+    desktop/   26 captures, 1440 × 900
+    states/     5 captures (vide, chargement, erreur)
 ```
 
 Les captures « avant » ont été prises sur `main` (`56a1b77`). Les captures
@@ -33,10 +33,10 @@ les données du seed.
 | Détail de mallette | `chip-case-detail.png` | `chip-case-detail.png` |
 | Presets | `presets.png` | `presets.png` |
 | Création de preset | `preset-detail.png` | `preset-new.png` |
-| Assistant — informations | `wizard-1-info.png` | `wizard-1-info.png` |
-| Assistant — jetons | `wizard-2-chips.png` | `wizard-2-chips-auto.png`, `wizard-2-chips-manual.png`, `wizard-2-common.png`, `wizard-2-common-insufficient.png` |
-| Assistant — blindes | `wizard-3-blinds.png` | `wizard-3-blinds.png` |
-| Assistant — options | `wizard-4-options.png` | `wizard-4-options.png` |
+| Assistant : informations | `wizard-1-info.png` | `wizard-1-info.png` |
+| Assistant : jetons | `wizard-2-chips.png` | `wizard-2-chips-auto.png`, `wizard-2-chips-manual.png`, `wizard-2-common.png`, `wizard-2-common-insufficient.png` |
+| Assistant : blindes | `wizard-3-blinds.png` | `wizard-3-blinds.png` |
+| Assistant : options | `wizard-4-options.png` | `wizard-4-options.png` |
 | Console live | `tournament-live.png` | `tournament-live.png` |
 | Structure | `tournament-structure.png` | `tournament-structure.png` |
 | Joueurs | `tournament-players.png` | `tournament-players.png` |

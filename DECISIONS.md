@@ -1,4 +1,4 @@
-# DECISIONS — Pokero
+# DECISIONS · Pokero
 
 Ce fichier trace les choix techniques et les hypothèses, notamment celles qui
 complètent le cahier des charges.

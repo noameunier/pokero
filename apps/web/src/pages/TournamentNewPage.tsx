@@ -557,7 +557,7 @@ export function TournamentNewPage() {
                     setAppliedPreset(null);
                   }}
                 >
-                  <option value="">— {t('common.none')} —</option>
+                  <option value="">{t('common.none')}</option>
                   {(presetsQuery.data?.presets ?? [])
                     .filter((preset) => !preset.archived)
                     .map((preset) => (
@@ -1055,7 +1055,7 @@ export function TournamentNewPage() {
                             : `${formatChips(Number(level.smallBlind))} / ${formatChips(Number(level.bigBlind))}`}
                         </td>
                         <td className="px-3 py-1.5 tabular text-cream-400">
-                          {isBreak || !level.ante ? '—' : formatChips(Number(level.ante))}
+                          {isBreak || !level.ante ? '0' : formatChips(Number(level.ante))}
                         </td>
                         <td className="px-3 py-1.5 text-right text-cream-400">
                           {level.durationMinutes} min
@@ -1187,7 +1187,7 @@ export function TournamentNewPage() {
               <Badge tone="gold">{name || 'Sans nom'}</Badge>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <SummaryTile label="Mallette" value={selectedChipCase?.name ?? '—'} />
+              <SummaryTile label="Mallette" value={selectedChipCase?.name ?? 'Aucune'} />
               <SummaryTile label="Cave" value={formatChips(targetBuyIn)} hint={`${players} joueurs`} />
               <SummaryTile
                 label="Structure"

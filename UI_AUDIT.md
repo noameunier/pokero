@@ -1,4 +1,4 @@
-# UI_AUDIT — Pokero
+# UI_AUDIT · Pokero
 
 Audit de l'interface web avant/après la refonte UI/UX.
 
@@ -64,10 +64,10 @@ Mesures V1 (formule WCAG, mélanges calculés sur les valeurs de tokens) :
 
 | Combinaison V1 | Ratio | Seuil texte courant |
 |---|---|---|
-| `ink-500` `#56665f` sur `felt-950` | **2,98:1** | 4,5:1 — échec |
-| `cream-300/60` sur une carte (`#113026`) | **4,16:1** | 4,5:1 — échec |
-| `cream-300/60` sur `felt-900` | **4,42:1** | 4,5:1 — échec |
-| Placeholder `cream-300/40` sur `felt-950` | **2,79:1** | 4,5:1 — échec |
+| `ink-500` `#56665f` sur `felt-950` | **2,98:1** | 4,5:1 (échec) |
+| `cream-300/60` sur une carte (`#113026`) | **4,16:1** | 4,5:1 (échec) |
+| `cream-300/60` sur `felt-900` | **4,42:1** | 4,5:1 (échec) |
+| Placeholder `cream-300/40` sur `felt-950` | **2,79:1** | 4,5:1 (échec) |
 
 La V1 comptait **183 occurrences** de classes `text-cream-*/…` (texte avec
 opacité), ce qui rendait les contrastes dépendants du fond et impossibles à

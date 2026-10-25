@@ -78,14 +78,14 @@ function LiveCard({ tournament }: { tournament: TournamentSummary }) {
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.2fr_1fr] lg:items-end">
         <div>
           <div className="clock-digits text-[clamp(3.4rem,11vw,5.2rem)] text-cream-50">
-            {clock ? formatDuration(remaining) : '—:—'}
+            {clock ? formatDuration(remaining) : '--:--'}
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-cream-300">
             <span className="inline-flex items-center gap-1.5">
               <Clock3 className="size-3.5 text-gold-500" aria-hidden />
               {clock?.kind === 'BREAK'
                 ? t('common.break')
-                : `${t('common.level')} ${clock?.playLevelNumber ?? '—'}`}
+                : `${t('common.level')} ${clock?.playLevelNumber ?? 'N/A'}`}
             </span>
             {clock?.smallBlind !== null && clock?.smallBlind !== undefined ? (
               <span className="tabular text-cream-200">

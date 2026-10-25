@@ -1,4 +1,4 @@
-# TEST_REPORT — Refonte UI/UX Pokero
+# TEST_REPORT · Refonte UI/UX Pokero
 
 Rapport des vérifications réellement exécutées le 25 octobre 2026 sur
 l’environnement de développement Linux.

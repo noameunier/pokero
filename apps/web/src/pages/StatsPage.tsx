@@ -85,7 +85,7 @@ export function StatsPage() {
         />
         <Stat
           label={t('stats.bestRank')}
-          value={bestRank ?? '—'}
+          value={bestRank ?? 'N/A'}
           icon={<TrendingUp className="size-4" aria-hidden />}
         />
       </section>
@@ -133,14 +133,18 @@ export function StatsPage() {
                         }`}
                         aria-hidden
                       >
-                        {participation.rank ?? '—'}
+                        {participation.rank ?? 'N/A'}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[13.5px] font-semibold text-cream-100">
                           {participation.tournamentName}
                         </span>
                         <span className="block text-[10.5px] text-cream-500 sm:hidden">
-                          {participation.rank === 1 ? 'Vainqueur' : `Place ${participation.rank ?? '—'}`}
+                          {participation.rank === 1
+                            ? 'Vainqueur'
+                            : participation.rank != null
+                              ? `Place ${participation.rank}`
+                              : 'Non classé'}
                           {participation.rebuys > 0 ? ` · ${participation.rebuys} rebuy` : ''}
                           {participation.addOns > 0 ? ` · ${participation.addOns} add-on` : ''}
                         </span>
@@ -160,7 +164,7 @@ export function StatsPage() {
                         <Crown className="mx-auto size-4 text-gold-400" aria-label="Vainqueur" />
                       ) : (
                         <span className="tabular text-[13px] text-cream-300">
-                          {participation.rank ?? '—'}
+                          {participation.rank ?? 'N/A'}
                         </span>
                       )}
                     </span>
@@ -208,7 +212,7 @@ export function StatsPage() {
                     {t('stats.averageRank')}
                   </div>
                   <div className="tabular mt-0.5 text-xl font-bold text-cream-50">
-                    {averageRank === null ? '—' : averageRank.toFixed(1)}
+                    {averageRank === null ? 'N/A' : averageRank.toFixed(1)}
                   </div>
                 </div>
                 <div>
@@ -216,7 +220,7 @@ export function StatsPage() {
                     Meilleure place
                   </div>
                   <div className="tabular mt-0.5 text-xl font-bold text-cream-50">
-                    {bestRank ?? '—'}
+                    {bestRank ?? 'N/A'}
                   </div>
                 </div>
               </div>
@@ -268,7 +272,7 @@ export function StatsPage() {
                       {result.tournamentName}
                     </span>
                     <span className="shrink-0 text-[10.5px] text-cream-500">
-                      {result.startedAt ? formatDateShort(result.startedAt) : '—'}
+                      {result.startedAt ? formatDateShort(result.startedAt) : 'N/A'}
                     </span>
                   </li>
                 ))}

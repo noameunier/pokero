@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TournamentStatus } from './types';
 
 export function formatChips(value: number | null | undefined): string {
-  if (value === null || value === undefined) return '—';
+  if (value === null || value === undefined) return 'N/A';
   return new Intl.NumberFormat('fr-FR').format(value);
 }
 
@@ -26,7 +26,7 @@ export function formatMinutes(totalMinutes: number): string {
 }
 
 export function formatDate(value: string | null | undefined, locale = 'fr-FR'): string {
-  if (!value) return '—';
+  if (!value) return 'N/A';
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -34,7 +34,7 @@ export function formatDate(value: string | null | undefined, locale = 'fr-FR'): 
 }
 
 export function formatDateShort(value: string | null | undefined, locale = 'fr-FR'): string {
-  if (!value) return '—';
+  if (!value) return 'N/A';
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(value));
 }
 

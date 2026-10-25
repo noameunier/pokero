@@ -84,7 +84,7 @@ export function ProjectionPage() {
   const ranking = detailQuery.data?.ranking?.entries ?? [];
   const displayName = (participantId: string) =>
     tournament.participants.find((participant) => participant.id === participantId)?.displayName ??
-    '—';
+    'Joueur';
 
   return (
     <div
@@ -157,7 +157,7 @@ export function ProjectionPage() {
                     <Coffee className="size-3.5" aria-hidden /> Pause
                   </>
                 ) : (
-                  <>Niveau {clock?.playLevelNumber ?? '—'}</>
+                  <>Niveau {clock?.playLevelNumber ?? 'N/A'}</>
                 )}
               </span>
               {paused ? (
@@ -254,7 +254,7 @@ export function ProjectionPage() {
                       </span>
                       <span className="tabular shrink-0 text-sm font-semibold text-cream-100">
                         {segment.kind === 'BREAK'
-                          ? '—'
+                          ? 'N/A'
                           : `${formatChips(segment.smallBlind)} / ${formatChips(segment.bigBlind)}`}
                       </span>
                     </li>

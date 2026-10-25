@@ -34,11 +34,11 @@ docker-compose.prod.yml
 
 La refonte UI/UX est documentée dans :
 
-- [`UI_AUDIT.md`](UI_AUDIT.md) — audit avant/après, défauts corrigés, mesures ;
-- [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) — tokens, composants, états,
+- [`UI_AUDIT.md`](UI_AUDIT.md) : audit avant/après, défauts corrigés, mesures ;
+- [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) : tokens, composants, états,
   responsive, accessibilité ;
-- [`TEST_REPORT.md`](TEST_REPORT.md) — tests, build, contrastes, limites ;
-- [`docs/ui/`](docs/ui/README.md) — captures avant/après (mobile, tablette,
+- [`TEST_REPORT.md`](TEST_REPORT.md) : tests, build, contrastes, limites ;
+- [`docs/ui/`](docs/ui/README.md) : captures avant/après (mobile, tablette,
   desktop) et états vide/chargement/erreur.
 
 Direction : anthracite à sous-ton vert, vert feutrine, or rare, polices

@@ -109,7 +109,7 @@ export function SpectatorPage() {
                       <Coffee className="size-3.5" aria-hidden /> Pause
                     </>
                   ) : (
-                    <>Niveau {clock.playLevelNumber ?? '—'}</>
+                    <>Niveau {clock.playLevelNumber ?? 'N/A'}</>
                   )}
                 </span>
                 {paused ? (

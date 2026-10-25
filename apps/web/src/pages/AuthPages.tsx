@@ -80,7 +80,7 @@ function AuthShell({
         />
 
         <div className="relative">
-          <Link to="/" aria-label="Pokero — accueil">
+          <Link to="/" aria-label="Pokero, accueil">
             <BrandMark />
           </Link>
         </div>
@@ -142,7 +142,7 @@ function AuthShell({
 
       <div className="relative flex flex-col">
         <div className="flex items-center justify-between px-5 pb-0 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-8 lg:hidden">
-          <Link to="/" aria-label="Pokero — accueil">
+          <Link to="/" aria-label="Pokero, accueil">
             <BrandMark />
           </Link>
         </div>

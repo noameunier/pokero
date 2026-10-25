@@ -322,7 +322,7 @@ export function PresetEditorPage() {
                   value={config.defaultChipCaseId ?? ''}
                   onChange={(event) => patchConfig({ defaultChipCaseId: event.target.value || null })}
                 >
-                  <option value="">— {t('common.none')} —</option>
+                  <option value="">{t('common.none')}</option>
                   {chipCases.map((chipCase) => (
                     <option key={chipCase.id} value={chipCase.id}>
                       {chipCase.name}
