@@ -311,22 +311,23 @@ export function ChipCaseEditorPage() {
               {rows.map((row, index) => (
                 <div
                   key={row.id ?? index}
-                  className="grid grid-cols-[2rem_1fr_1fr] items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-2 sm:grid-cols-[2rem_1.2fr_5.5rem_1fr_1fr_2.5rem]"
+                  className="grid grid-cols-[2rem_1fr_1fr_2.5rem] items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-2 sm:grid-cols-[2rem_1.2fr_5.5rem_1fr_1fr_2.5rem]"
                 >
                   <input
                     type="color"
                     aria-label={`${t('chipCase.color')} ${row.label}`}
                     value={row.color}
                     onChange={(event) => updateRow(index, { color: event.target.value })}
-                    className="size-8 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border [&::-webkit-color-swatch]:border-white/30"
+                    className="col-start-1 row-start-1 size-8 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border [&::-webkit-color-swatch]:border-white/30 sm:col-start-1"
                   />
                   <Input
                     aria-label={t('chipCase.chipLabel')}
                     value={row.label}
                     maxLength={40}
                     onChange={(event) => updateRow(index, { label: event.target.value })}
+                    className="col-span-2 col-start-2 row-start-1 min-w-0 sm:col-span-1 sm:col-start-2"
                   />
-                  <div className="hidden items-center gap-2 sm:flex">
+                  <div className="hidden items-center gap-2 sm:col-start-3 sm:row-start-1 sm:flex">
                     <input
                       type="color"
                       aria-label={t('chipCase.color')}
@@ -335,27 +336,35 @@ export function ChipCaseEditorPage() {
                       className="size-9 w-full cursor-pointer rounded-lg border border-white/10 bg-transparent p-0.5"
                     />
                   </div>
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    aria-label={t('chipCase.value')}
-                    min={1}
-                    value={row.value}
-                    onChange={(event) => updateRow(index, { value: event.target.value })}
-                  />
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    aria-label={t('chipCase.quantity')}
-                    min={0}
-                    value={row.quantity}
-                    onChange={(event) => updateRow(index, { quantity: event.target.value })}
-                  />
+                  <div className="col-span-2 col-start-1 row-start-2 min-w-0 sm:contents">
+                    <label className="label sm:hidden">{t('chipCase.value')}</label>
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      aria-label={t('chipCase.value')}
+                      min={1}
+                      value={row.value}
+                      onChange={(event) => updateRow(index, { value: event.target.value })}
+                      className="min-w-0 sm:col-start-4 sm:row-start-1"
+                    />
+                  </div>
+                  <div className="col-span-2 col-start-3 row-start-2 min-w-0 sm:contents">
+                    <label className="label sm:hidden">{t('chipCase.quantity')}</label>
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      aria-label={t('chipCase.quantity')}
+                      min={0}
+                      value={row.quantity}
+                      onChange={(event) => updateRow(index, { quantity: event.target.value })}
+                      className="min-w-0 sm:col-start-5 sm:row-start-1"
+                    />
+                  </div>
                   <button
                     type="button"
                     aria-label={t('common.delete')}
                     onClick={() => setRows((current) => current.filter((_, i) => i !== index))}
-                    className="grid size-8 place-items-center rounded-lg text-cream-300/50 hover:bg-red-500/10 hover:text-red-300"
+                    className="col-start-4 row-start-1 grid size-8 place-items-center justify-self-end rounded-lg text-cream-300/50 hover:bg-red-500/10 hover:text-red-300 sm:col-start-6"
                   >
                     <Trash2 className="size-4" />
                   </button>
