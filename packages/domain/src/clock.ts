@@ -59,6 +59,7 @@ export interface ResolvedClock {
 
 export interface ClockView {
   status: ClockStatus;
+  version: number;
   serverNow: number;
   segmentIndex: number;
   levelPosition: number;
@@ -440,6 +441,7 @@ export function viewClock(
 
   return {
     status: state.status,
+    version: state.version,
     serverNow: now,
     segmentIndex: resolved.segmentIndex,
     levelPosition: current.levelPosition,
