@@ -71,13 +71,14 @@ Commande :
 E2E_BASE_URL=http://127.0.0.1:5173 pnpm test:e2e
 ```
 
-Résultat : **3/3 scénarios verts** (45,9 s au total, dernier passage).
+Résultat : **4/4 scénarios verts** (59,7 s au total, dernier passage).
 
 | Scénario | Fichier | Durée | Couverture |
 |---|---|---|---|
-| Parcours organisateur complet | `e2e/tournament.spec.ts` | 24,4 s | Inscription, mallettes, tournoi, jetons communs, joueurs, chrono, éliminations avec confirmation, clôture, classement, lien spectateur, lien invalide, suppression RGPD |
-| Saisie mobile | `e2e/mobile-layout.spec.ts` | 7,3 s | Valeurs et quantités lisibles, pas de débordement, suppression de compte |
-| Quantité commune de jetons | `e2e/chip-common.spec.ts` | 12,4 s | Case globale, cases par jeton, valeur commune, retour aux valeurs spécifiques, alerte de stock |
+| Parcours organisateur complet | `e2e/tournament.spec.ts` | 27,3 s | Inscription, mallettes, tournoi, jetons communs, joueurs, chrono, éliminations avec confirmation, clôture, classement, lien spectateur, lien invalide, suppression RGPD |
+| Saisie mobile | `e2e/mobile-layout.spec.ts` | 7,9 s | Valeurs et quantités lisibles, pas de débordement, suppression de compte |
+| Quantité commune de jetons | `e2e/chip-common.spec.ts` | 12,3 s | Case globale, cases par jeton, valeur commune, retour aux valeurs spécifiques, alerte de stock |
+| Aperçu local de cave | `e2e/chip-case-preview.spec.ts` | 10,3 s | Aperçu calculé avec les valeurs non enregistrées, avertissement d’obsolescence, enregistrement depuis le bas de page, suppression |
 
 Adaptations rendues nécessaires par la refonte, sans modifier les attentes
 fonctionnelles :

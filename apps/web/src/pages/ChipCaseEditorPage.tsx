@@ -3,9 +3,10 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Archive, ArrowLeft, Plus, Save, Trash2 } from 'lucide-react';
-import { api, ApiError } from '../lib/api';
+import { distributeChips, type ChipStock, type DistributionResult } from '@pokero/domain';
+import { api } from '../lib/api';
 import { formatChips, useApiErrorMessage } from '../lib/format';
-import type { BuyInPlan, ChipCase } from '../lib/types';
+import type { ChipCase } from '../lib/types';
 import { Badge, Button, Card, ConfirmDialog, Field, Input, Modal, Select, Spinner } from '../components/ui';
 import { useToast } from '../components/Toast';
 
@@ -156,19 +157,109 @@ export function ChipCaseEditorPage() {
 
   const [previewPlayers, setPreviewPlayers] = useState('8');
   const [previewBuyIn, setPreviewBuyIn] = useState('10000');
-  const previewMutation = useMutation({
-    mutationFn: () =>
-      api.post<{ plan: BuyInPlan }>(`/api/chip-cases/${id}/buyin/preview`, {
-        players: Number.parseInt(previewPlayers, 10),
-        targetBuyIn: Number.parseInt(previewBuyIn, 10),
-        startingStack: Number.parseInt(previewBuyIn, 10),
-        mode: 'AUTO',
-        counts: {},
-        commonEnabled: {},
-        commonCount: 0,
-        maxChipsPerPlayer: 60,
+  const [preview, setPreview] = useState<{
+    signature: string;
+    plan: DistributionResult;
+  } | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  const previewSignature = useMemo(
+    () =>
+      JSON.stringify({
+        players: previewPlayers,
+        buyIn: previewBuyIn,
+        rows: rows.map((row, index) => [
+          row.id ?? `draft-${index}`,
+          row.label,
+          row.value,
+          row.quantity,
+        ]),
       }),
-  });
+    [rows, previewPlayers, previewBuyIn],
+  );
+  const activePreview = preview?.signature === previewSignature ? preview : null;
+  const previewStale = preview !== null && activePreview === null;
+
+  const calculatePreview = () => {
+    setPreviewError(null);
+    const players = Number.parseInt(previewPlayers, 10);
+    const targetBuyIn = Number.parseInt(previewBuyIn, 10);
+    if (!Number.isFinite(players) || players < 2) {
+      setPreview(null);
+      setPreviewError('Indiquez au moins 2 joueurs.');
+      return;
+    }
+    if (!Number.isFinite(targetBuyIn) || targetBuyIn <= 0) {
+      setPreview(null);
+      setPreviewError('Indiquez une valeur de cave positive.');
+      return;
+    }
+
+    const persistedTypes = new Map(
+      (detailQuery.data?.chipCase.chipTypes ?? []).map((type) => [type.id, type]),
+    );
+    const chipTypes: ChipStock[] = [];
+    const values = new Set<number>();
+    for (const [index, row] of rows.entries()) {
+      const value = Number.parseInt(row.value, 10);
+      const quantity = Number.parseInt(row.quantity, 10);
+      if (!row.label.trim()) {
+        setPreview(null);
+        setPreviewError('Chaque jeton doit avoir un libellé.');
+        return;
+      }
+      if (!Number.isFinite(value) || value <= 0) {
+        setPreview(null);
+        setPreviewError('Chaque jeton doit avoir une valeur positive.');
+        return;
+      }
+      if (!Number.isFinite(quantity) || quantity < 0) {
+        setPreview(null);
+        setPreviewError('Les quantités doivent être positives.');
+        return;
+      }
+      if (values.has(value)) {
+        setPreview(null);
+        setPreviewError(t('chipCase.uniqueValues'));
+        return;
+      }
+      values.add(value);
+      const original = row.id ? persistedTypes.get(row.id) : undefined;
+      const reserved = original
+        ? Math.max(0, original.quantity - (original.freeQuantity ?? original.quantity))
+        : 0;
+      chipTypes.push({
+        id: row.id ?? `draft-${index}`,
+        label: row.label.trim(),
+        value,
+        available: quantity,
+        reserved,
+      });
+    }
+    if (chipTypes.length === 0) {
+      setPreview(null);
+      setPreviewError('Ajoutez au moins un type de jeton.');
+      return;
+    }
+
+    try {
+      const plan = distributeChips({
+        chipTypes,
+        players,
+        targetBuyIn,
+        startBigBlind: Math.max(1, Math.round(targetBuyIn / 100)),
+        maxChipsPerPlayer: 60,
+      });
+      setPreview({ signature: previewSignature, plan });
+    } catch (caught) {
+      setPreview(null);
+      setPreviewError(
+        caught instanceof Error
+          ? caught.message
+          : 'Impossible de calculer la répartition avec ces valeurs.',
+      );
+    }
+  };
 
   const totals = useMemo(() => {
     return rows.reduce(
@@ -249,14 +340,24 @@ export function ChipCaseEditorPage() {
               {archived ? 'Désarchiver' : 'Archiver'}
             </Button>
           ) : null}
-          <Button onClick={onSubmit} loading={saveMutation.isPending} size="sm" className="flex-1 sm:flex-none">
+          <Button
+            type="submit"
+            form="chip-case-form"
+            loading={saveMutation.isPending}
+            size="sm"
+            className="flex-1 sm:flex-none"
+          >
             <Save className="size-3.5" aria-hidden />
             {t('common.save')}
           </Button>
         </div>
       </header>
 
-      <form onSubmit={onSubmit} className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+      <form
+        id="chip-case-form"
+        onSubmit={onSubmit}
+        className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]"
+      >
         <div className="space-y-5">
           <Card className="p-4 sm:p-5">
             <h2 className="font-display text-xl text-cream-50">Identité</h2>
@@ -428,6 +529,15 @@ export function ChipCaseEditorPage() {
                 {formError}
               </p>
             ) : null}
+
+            <Button
+              type="submit"
+              loading={saveMutation.isPending}
+              className="mt-4 w-full"
+            >
+              <Save className="size-4" aria-hidden />
+              {isNew ? 'Créer la mallette' : 'Enregistrer les modifications'}
+            </Button>
           </Card>
         </div>
 
@@ -510,83 +620,102 @@ export function ChipCaseEditorPage() {
             </Card>
           )}
 
-          {!isNew ? (
-            <Card className="p-4 sm:p-5">
-              <h2 className="font-display text-xl text-cream-50">Aperçu de cave</h2>
-              <p className="mt-1 text-[11.5px] leading-relaxed text-cream-400">
-                Vérifiez la répartition avant de créer un tournoi.
-              </p>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <Field label={t('tournament.playersExpected')}>
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    min={2}
-                    max={200}
-                    value={previewPlayers}
-                    onChange={(event) => setPreviewPlayers(event.target.value)}
-                  />
-                </Field>
-                <Field label={t('tournament.buyIn')}>
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
-                    step={100}
-                    value={previewBuyIn}
-                    onChange={(event) => setPreviewBuyIn(event.target.value)}
-                  />
-                </Field>
-              </div>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="mt-3 w-full"
-                loading={previewMutation.isPending}
-                onClick={() => previewMutation.mutate()}
-              >
-                Calculer la répartition
-              </Button>
+          <Card className="p-4 sm:p-5">
+            <h2 className="font-display text-xl text-cream-50">Aperçu de cave</h2>
+            <p className="mt-1 text-[11.5px] leading-relaxed text-cream-400">
+              Calculé avec les valeurs saisies, même si elles ne sont pas encore enregistrées.
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <Field label={t('tournament.playersExpected')}>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={2}
+                  max={200}
+                  value={previewPlayers}
+                  onChange={(event) => setPreviewPlayers(event.target.value)}
+                />
+              </Field>
+              <Field label={t('tournament.buyIn')}>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  step={1}
+                  value={previewBuyIn}
+                  onChange={(event) => setPreviewBuyIn(event.target.value)}
+                />
+              </Field>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="mt-3 w-full"
+              onClick={calculatePreview}
+            >
+              Calculer la répartition
+            </Button>
 
-              {previewMutation.data ? (
-                <div className="mt-4 space-y-2 border-t border-white/[0.06] pt-3">
-                  <div className="flex items-center justify-between gap-2 text-[12px]">
-                    <span
-                      className={
-                        previewMutation.data.plan.exact ? 'text-success-300' : 'text-warning-300'
-                      }
-                    >
-                      {previewMutation.data.plan.exact
-                        ? t('tournament.exactDistribution')
-                        : t('tournament.approximateDistribution', {
-                            difference: formatChips(previewMutation.data.plan.difference),
-                          })}
-                    </span>
-                    <Badge tone="neutral">{previewMutation.data.plan.algorithm}</Badge>
-                  </div>
-                  {previewMutation.data.plan.counts
-                    .filter((count) => count.perPlayer > 0)
-                    .map((count) => (
+            {previewError ? (
+              <p className="field-error mt-3" role="alert">
+                {previewError}
+              </p>
+            ) : null}
+
+            {previewStale ? (
+              <p className="mt-3 rounded-[var(--radius-sm)] border border-warning-500/25 bg-warning-500/[0.07] px-3 py-2 text-[11.5px] text-warning-300">
+                Les valeurs ont changé. Recalculez l’aperçu pour voir la répartition à jour.
+              </p>
+            ) : null}
+
+            {activePreview ? (
+              <div
+                className="mt-4 space-y-2 border-t border-white/[0.06] pt-3"
+                aria-live="polite"
+                data-testid="buyin-preview-counts"
+              >
+                <div className="flex items-center justify-between gap-2 text-[12px]">
+                  <span
+                    className={
+                      activePreview.plan.exact ? 'text-success-300' : 'text-warning-300'
+                    }
+                  >
+                    {activePreview.plan.exact
+                      ? t('tournament.exactDistribution')
+                      : t('tournament.approximateDistribution', {
+                          difference: formatChips(activePreview.plan.difference),
+                        })}
+                  </span>
+                  <Badge tone="neutral">{activePreview.plan.algorithm}</Badge>
+                </div>
+                {activePreview.plan.counts
+                  .filter((count) => count.count > 0)
+                  .map((count) => {
+                    const row = rows.find(
+                      (candidate, index) =>
+                        (candidate.id ?? `draft-${index}`) === count.chipTypeId,
+                    );
+                    return (
                       <div key={count.chipTypeId} className="flex items-center gap-2 text-[13px]">
                         <span
                           className="size-3.5 rounded-full border border-white/20"
-                          style={{ backgroundColor: count.color }}
+                          style={{ backgroundColor: row?.color }}
                           aria-hidden
                         />
-                        <span className="flex-1 text-cream-200">{count.label}</span>
-                        <span className="tabular text-cream-400">×{count.perPlayer}</span>
+                        <span className="flex-1 text-cream-200">{row?.label ?? 'Jeton'}</span>
+                        <span className="tabular text-cream-400">×{count.count}</span>
                       </div>
-                    ))}
-                  <p className="pt-1 text-[11px] text-cream-400">
-                    {t('tournament.chipsPerPlayer', {
-                      count: previewMutation.data.plan.perPlayerChipCount,
-                    })}
-                  </p>
-                </div>
-              ) : null}
-            </Card>
-          ) : null}
+                    );
+                  })}
+                <p className="pt-1 text-[11px] text-cream-400">
+                  {t('tournament.chipsPerPlayer', {
+                    count: activePreview.plan.perPlayerChipCount,
+                  })}
+                </p>
+              </div>
+            ) : null}
+          </Card>
 
           {!isNew ? (
             <Card className="p-4 sm:p-5">
