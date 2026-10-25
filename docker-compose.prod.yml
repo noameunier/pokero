@@ -1,0 +1,131 @@
+name: pokero
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pokero}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Definissez POSTGRES_PASSWORD dans .env}
+      POSTGRES_DB: ${POSTGRES_DB:-pokero}
+    volumes:
+      - pokero-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pokero} -d ${POSTGRES_DB:-pokero}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - pokero
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  migrate:
+    build:
+      context: .
+      dockerfile: infra/docker/api.Dockerfile
+      target: builder
+    command: pnpm --filter @pokero/api db:deploy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-pokero}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-pokero}?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - pokero
+
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/api.Dockerfile
+      target: runtime
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-pokero}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-pokero}?schema=public
+      TRUST_PROXY: "true"
+      APP_BASE_URL: ${APP_BASE_URL:-https://pokero.noameunier.fr}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+    ports:
+      - "127.0.0.1:4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4000/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    stop_grace_period: 15s
+    networks:
+      - pokero
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+  web:
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 8080
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8080/').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - pokero
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+volumes:
+  pokero-db:
+
+networks:
+  pokero:
+    driver: bridge

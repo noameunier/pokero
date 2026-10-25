@@ -1,0 +1,15 @@
+.git
+.gitignore
+**/node_modules
+**/dist
+**/coverage
+**/.cache
+**/test-results
+**/playwright-report
+apps/api/generated
+apps/api/prisma/*.db
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
