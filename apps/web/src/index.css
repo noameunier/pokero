@@ -1,0 +1,185 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  --font-display: Georgia, 'Times New Roman', serif;
+
+  --color-felt-950: #041a13;
+  --color-felt-900: #07271d;
+  --color-felt-800: #0b3d2e;
+  --color-felt-700: #10543e;
+  --color-felt-600: #16704f;
+  --color-felt-500: #1f8a63;
+
+  --color-gold-300: #f6dda0;
+  --color-gold-400: #f0c96b;
+  --color-gold-500: #e8b64c;
+  --color-gold-600: #c9932f;
+
+  --color-cream-50: #fbf8f1;
+  --color-cream-100: #f5efe2;
+  --color-cream-200: #e8dfc9;
+  --color-cream-300: #d7cbb0;
+
+  --color-ink-900: #0b1512;
+  --color-ink-700: #26352f;
+  --color-ink-500: #56665f;
+
+  --color-danger-500: #b3402f;
+  --color-danger-600: #953225;
+  --color-success-500: #2f7d5c;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    font-family: var(--font-sans);
+    color: var(--color-cream-100);
+    background:
+      radial-gradient(1200px 800px at 50% -10%, #0f4a37 0%, transparent 60%),
+      radial-gradient(900px 600px at 100% 100%, #0a2d22 0%, transparent 55%),
+      var(--color-felt-950);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: var(--color-gold-500);
+    color: var(--color-felt-950);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #1f8a63 transparent;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-white/10 bg-white/[0.04] shadow-[0_10px_40px_-20px_rgba(0,0,0,0.8)] backdrop-blur-sm;
+  }
+
+  .card-solid {
+    @apply rounded-2xl border border-felt-700/60 bg-felt-900/90 shadow-[0_18px_50px_-24px_rgba(0,0,0,0.9)];
+  }
+
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost,
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition
+      focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400
+      disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply bg-gold-500 text-felt-950 hover:bg-gold-400 active:bg-gold-600;
+  }
+
+  .btn-secondary {
+    @apply border border-white/15 bg-white/5 text-cream-100 hover:border-gold-500/50 hover:bg-white/10;
+  }
+
+  .btn-ghost {
+    @apply text-cream-200 hover:bg-white/10 hover:text-white;
+  }
+
+  .btn-danger {
+    @apply bg-danger-500 text-white hover:bg-danger-600;
+  }
+
+  .btn-sm {
+    @apply rounded-lg px-3 py-1.5 text-xs;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-white/15 bg-felt-950/60 px-3.5 py-2.5 text-sm text-cream-50
+      placeholder:text-cream-300/40 focus:border-gold-500/70 focus:outline-none
+      focus:ring-2 focus:ring-gold-500/20 disabled:opacity-60;
+  }
+
+  .label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider text-cream-300/80;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide;
+  }
+
+  .nav-link {
+    @apply flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-cream-200/80 transition
+      hover:bg-white/10 hover:text-white;
+  }
+
+  .nav-link-active {
+    @apply bg-gold-500/15 text-gold-300;
+  }
+
+  .field-error {
+    @apply mt-1 text-xs text-red-300;
+  }
+
+  .stat-value {
+    @apply font-display text-3xl font-bold tabular-nums text-cream-50;
+  }
+
+  .divider {
+    @apply h-px w-full bg-white/10;
+  }
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.clock-digits {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.glass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+}
+
+@keyframes pulse-gold {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.animate-pulse-gold {
+  animation: pulse-gold 1.4s ease-in-out infinite;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-rise {
+  animation: rise 0.35s ease-out both;
+}
