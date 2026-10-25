@@ -1,0 +1,25 @@
+{
+  "name": "pokero",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": ">=24.11"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @pokero/api --filter @pokero/web dev",
+    "build": "pnpm --filter @pokero/api build && pnpm --filter @pokero/web build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm --filter @pokero/web test:e2e",
+    "format": "prettier --write .",
+    "db:generate": "pnpm --filter @pokero/api db:generate",
+    "db:migrate": "pnpm --filter @pokero/api db:migrate",
+    "db:seed": "pnpm --filter @pokero/api db:seed"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  }
+}

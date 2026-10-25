@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+.cache/
+*.log
+.env
+.env.*
+!.env.example
+!.env.test.example
+.DS_Store
+test-results/
+playwright-report/
+blob-report/
+apps/api/prisma/dev.db
+apps/api/prisma/*.db
+*.tsbuildinfo
