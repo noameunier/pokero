@@ -485,7 +485,7 @@ export function PresetEditorPage() {
                     }
                   />
                 </Field>
-                <Field label="Premier niveau" htmlFor="preset-first-level">
+                <Field label={t('tournament.firstLevelDuration')} htmlFor="preset-first-level">
                   <Input
                     id="preset-first-level"
                     type="number"
@@ -500,7 +500,7 @@ export function PresetEditorPage() {
                     }
                   />
                 </Field>
-                <Field label="Niveaux suivants" htmlFor="preset-level-duration">
+                <Field label={t('tournament.followingLevelDuration')} htmlFor="preset-level-duration">
                   <Input
                     id="preset-level-duration"
                     type="number"

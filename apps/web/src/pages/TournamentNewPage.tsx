@@ -975,7 +975,7 @@ export function TournamentNewPage() {
                   />
                 </Field>
                 <Field
-                  label="Premier niveau"
+                  label={t('tournament.firstLevelDuration')}
                   hint="Souvent plus long"
                   htmlFor="first-level-duration"
                 >
@@ -991,7 +991,7 @@ export function TournamentNewPage() {
                     }
                   />
                 </Field>
-                <Field label="Niveaux suivants" htmlFor="level-duration">
+                <Field label={t('tournament.followingLevelDuration')} htmlFor="level-duration">
                   <Input
                     id="level-duration"
                     type="number"
@@ -1067,7 +1067,7 @@ export function TournamentNewPage() {
                   <span>SB</span>
                   <span>BB</span>
                   <span>Ante</span>
-                  <span>Durée</span>
+                  <span>Durée (min)</span>
                   <span />
                 </div>
                 {manualLevels.map((level, index) => (
@@ -1126,6 +1126,7 @@ export function TournamentNewPage() {
                       type="number"
                       inputMode="numeric"
                       min={1}
+                      placeholder="min"
                       aria-label={`Durée du niveau ${index + 1} en minutes`}
                       value={level.durationMinutes}
                       onChange={(event) =>
