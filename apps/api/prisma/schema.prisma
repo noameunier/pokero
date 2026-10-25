@@ -1,0 +1,446 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum TournamentStatus {
+  DRAFT
+  READY
+  RUNNING
+  PAUSED
+  RECOVERY_PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum ParticipantStatus {
+  ACTIVE
+  ELIMINATED
+}
+
+enum ReservationStatus {
+  ACTIVE
+  RELEASED
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum BlindLevelKind {
+  PLAY
+  BREAK
+}
+
+model User {
+  id                          String                    @id @default(cuid())
+  email                       String                    @unique
+  passwordHash                String
+  displayName                 String
+  role                        UserRole                  @default(USER)
+  locale                      String                    @default("fr")
+  emailVerifiedAt             DateTime?
+  emailVerificationTokenHash  String?
+  emailVerificationExpiresAt  DateTime?
+  passwordResetTokenHash      String?
+  passwordResetExpiresAt      DateTime?
+  publicProfile               Boolean                   @default(true)
+  publicResults               Boolean                   @default(true)
+  deletedAt                   DateTime?
+  createdAt                   DateTime                  @default(now())
+  updatedAt                   DateTime                  @updatedAt
+
+  sessions                    UserSession[]
+  chipCases                   ChipCase[]
+  presets                     Preset[]
+  tournaments                 Tournament[]
+  participations              TournamentParticipant[]
+  claims                      ParticipantAccountClaim[]
+
+  @@index([deletedAt])
+}
+
+model UserSession {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique
+  userAgent   String?
+  ipHash      String?
+  createdAt   DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model ChipCase {
+  id          String      @id @default(cuid())
+  ownerId     String
+  owner       User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  archivedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  chipTypes   ChipType[]
+  tournaments Tournament[]
+
+  @@index([ownerId])
+}
+
+model ChipType {
+  id          String    @id @default(cuid())
+  chipCaseId  String
+  chipCase    ChipCase  @relation(fields: [chipCaseId], references: [id], onDelete: Cascade)
+  label       String
+  color       String
+  value       Int
+  quantity    Int
+  position    Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  allocations   ChipAllocation[]
+  reservations  InventoryReservation[]
+
+  @@unique([chipCaseId, position])
+  @@index([chipCaseId])
+}
+
+model InventoryAdjustment {
+  id         String   @id @default(cuid())
+  chipCaseId String
+  chipTypeId String
+  actorId    String
+  delta      Int
+  before     Int
+  after      Int
+  reason     String
+  createdAt  DateTime @default(now())
+
+  @@index([chipCaseId, createdAt])
+  @@index([chipTypeId])
+}
+
+model InventoryReservation {
+  id           String            @id @default(cuid())
+  tournamentId String
+  tournament   Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  chipTypeId   String
+  chipType     ChipType          @relation(fields: [chipTypeId], references: [id], onDelete: Restrict)
+  quantity     Int
+  status       ReservationStatus @default(ACTIVE)
+  createdAt    DateTime          @default(now())
+  releasedAt   DateTime?
+
+  @@unique([tournamentId, chipTypeId])
+  @@index([chipTypeId, status])
+}
+
+model Preset {
+  id               String          @id @default(cuid())
+  ownerId          String
+  owner            User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name             String
+  description      String?
+  defaultChipCaseId String?
+  config           Json
+  archivedAt       DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  versions         PresetVersion[]
+
+  @@index([ownerId])
+}
+
+model PresetVersion {
+  id          String   @id @default(cuid())
+  presetId    String
+  preset      Preset   @relation(fields: [presetId], references: [id], onDelete: Cascade)
+  version     Int
+  config      Json
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@unique([presetId, version])
+}
+
+model Tournament {
+  id                  String           @id @default(cuid())
+  ownerId             String
+  owner               User             @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  chipCaseId          String?
+  chipCase            ChipCase?        @relation(fields: [chipCaseId], references: [id], onDelete: SetNull)
+  presetId            String?
+  name                String
+  status              TournamentStatus @default(DRAFT)
+  publicRanking       Boolean          @default(false)
+  pinHash             String?
+  pinFailedAttempts   Int              @default(0)
+  pinLockedUntil      DateTime?
+  startedAt           DateTime?
+  completedAt         DateTime?
+  cancelledAt         DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  configuration       TournamentConfiguration?
+  levels              BlindLevel[]
+  participants        TournamentParticipant[]
+  clockState          TournamentClockState?
+  checkpoints         TournamentClockCheckpoint[]
+  events              TournamentEvent[]
+  reservations        InventoryReservation[]
+  allocations         ChipAllocation[]
+  rebuys              Rebuy[]
+  addOns              AddOn[]
+  eliminations        Elimination[]
+  finalRankings       FinalRanking[]
+  invitations         SpectatorInvitation[]
+  presences           TournamentPresence[]
+
+  @@index([ownerId, status])
+  @@index([createdAt])
+}
+
+model TournamentConfiguration {
+  id           String     @id @default(cuid())
+  tournamentId String     @unique
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  snapshot     Json
+  createdAt    DateTime   @default(now())
+}
+
+model BlindLevel {
+  id              String         @id @default(cuid())
+  tournamentId    String
+  tournament      Tournament     @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  position        Int
+  kind            BlindLevelKind
+  smallBlind      Int?
+  bigBlind        Int?
+  ante            Int?
+  durationMinutes Int
+
+  @@unique([tournamentId, position])
+}
+
+model TournamentParticipant {
+  id                  String            @id @default(cuid())
+  tournamentId        String
+  tournament          Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  userId              String?
+  user                User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  displayName         String
+  status              ParticipantStatus @default(ACTIVE)
+  eliminationSequence Int?
+  eliminatedAt        DateTime?
+  rebuyCount          Int               @default(0)
+  addOnCount          Int               @default(0)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  rebuys              Rebuy[]
+  addOns              AddOn[]
+  eliminations        Elimination[]
+  finalRanking        FinalRanking?
+  claims              ParticipantAccountClaim[]
+
+  @@unique([tournamentId, displayName])
+  @@index([tournamentId, status])
+  @@index([userId])
+}
+
+model ParticipantAccountClaim {
+  id            String      @id @default(cuid())
+  participantId String
+  participant   TournamentParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status        ClaimStatus @default(PENDING)
+  tokenHash     String?
+  note          String?
+  requestedAt   DateTime    @default(now())
+  decidedAt     DateTime?
+  decidedBy     String?
+
+  @@unique([participantId, userId])
+  @@index([status])
+  @@index([userId])
+}
+
+model TournamentClockState {
+  id                     String     @id @default(cuid())
+  tournamentId           String     @unique
+  tournament             Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  status                 String
+  segmentIndex           Int        @default(0)
+  anchorAt               DateTime?
+  remainingAtAnchorMs    Int        @default(0)
+  accumulatedPlayMs      Int        @default(0)
+  version                Int        @default(0)
+  structureExhausted     Boolean    @default(false)
+  lastAdminHeartbeatAt   DateTime?
+  lastAdminSessionId     String?
+  updatedAt              DateTime   @updatedAt
+}
+
+model TournamentClockCheckpoint {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  state        Json
+  version      Int
+  reason       String
+  createdById  String?
+  createdAt    DateTime   @default(now())
+
+  @@index([tournamentId, createdAt])
+}
+
+model TournamentEvent {
+  id                 String     @id @default(cuid())
+  tournamentId       String
+  tournament         Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  actorId            String?
+  type               String
+  payload            Json
+  version            Int
+  idempotencyKey     String?
+  compensatesEventId String?
+  createdAt          DateTime   @default(now())
+
+  @@unique([tournamentId, idempotencyKey])
+  @@index([tournamentId, createdAt])
+  @@index([type])
+}
+
+model ChipAllocation {
+  id             String     @id @default(cuid())
+  tournamentId   String
+  tournament     Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  chipTypeId     String
+  chipType       ChipType   @relation(fields: [chipTypeId], references: [id], onDelete: Restrict)
+  perPlayerCount Int
+  players        Int
+  totalQuantity  Int
+  createdAt      DateTime   @default(now())
+
+  @@unique([tournamentId, chipTypeId])
+}
+
+model Rebuy {
+  id             String     @id @default(cuid())
+  tournamentId   String
+  tournament     Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  participantId  String
+  participant    TournamentParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  value          Int
+  counts         Json
+  createdById    String
+  createdAt      DateTime   @default(now())
+  cancelledAt    DateTime?
+  compensatesId  String?
+
+  @@index([tournamentId, participantId])
+}
+
+model AddOn {
+  id             String     @id @default(cuid())
+  tournamentId   String
+  tournament     Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  participantId  String
+  participant    TournamentParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  value          Int
+  counts         Json
+  createdById    String
+  createdAt      DateTime   @default(now())
+  cancelledAt    DateTime?
+  compensatesId  String?
+
+  @@index([tournamentId, participantId])
+}
+
+model Elimination {
+  id             String     @id @default(cuid())
+  tournamentId   String
+  tournament     Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  participantId  String
+  participant    TournamentParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  sequence       Int
+  createdById    String
+  createdAt      DateTime   @default(now())
+  correctedAt    DateTime?
+
+  @@unique([tournamentId, participantId])
+  @@unique([tournamentId, sequence])
+}
+
+model FinalRanking {
+  id             String     @id @default(cuid())
+  tournamentId   String
+  tournament     Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  participantId  String     @unique
+  participant    TournamentParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  rank           Int
+  createdAt      DateTime   @default(now())
+
+  @@unique([tournamentId, rank])
+}
+
+model SpectatorInvitation {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  tokenHash    String     @unique
+  createdById  String?
+  createdAt    DateTime   @default(now())
+  revokedAt    DateTime?
+
+  @@index([tournamentId])
+}
+
+model TournamentPresence {
+  id              String     @id @default(cuid())
+  tournamentId    String
+  tournament      Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  userId          String
+  sessionId       String
+  role            String
+  lastHeartbeatAt DateTime   @default(now())
+  createdAt       DateTime   @default(now())
+
+  @@unique([tournamentId, sessionId])
+  @@index([tournamentId, lastHeartbeatAt])
+}
+
+model AdminAuditEvent {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  targetType String
+  targetId   String?
+  payload    Json?
+  ipHash     String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId])
+}
