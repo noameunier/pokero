@@ -30,6 +30,20 @@ infra/
 docker-compose.prod.yml
 ```
 
+## Interface
+
+La refonte UI/UX est documentée dans :
+
+- [`UI_AUDIT.md`](UI_AUDIT.md) — audit avant/après, défauts corrigés, mesures ;
+- [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) — tokens, composants, états,
+  responsive, accessibilité ;
+- [`TEST_REPORT.md`](TEST_REPORT.md) — tests, build, contrastes, limites ;
+- [`docs/ui/`](docs/ui/README.md) — captures avant/après (mobile, tablette,
+  desktop) et états vide/chargement/erreur.
+
+Direction : anthracite à sous-ton vert, vert feutrine, or rare, polices
+auto-hébergées Manrope + Instrument Serif. Aucune bibliothèque UI lourde.
+
 ## Développement local
 
 Prérequis : Node 24, pnpm 12, Docker.
@@ -71,7 +85,7 @@ Variables principales de `apps/api/.env` :
 ```bash
 pnpm --filter @pokero/domain test       # 47 tests unitaires
 pnpm --filter @pokero/api test          # 29 tests d'intégration (base pokero_test)
-pnpm --filter @pokero/web test:e2e      # scénario Playwright complet
+pnpm --filter @pokero/web test:e2e      # 3 scénarios Playwright
 pnpm typecheck                          # tous les paquets
 pnpm build                              # API + web
 ```
@@ -151,6 +165,7 @@ temporaire avant d'agir en production.
 - Vérification d'email désactivée en production faute de SMTP réel.
 - Application mobile Capacitor non commencée ; aucune publication sur les stores
   n'est revendiquée.
-- Bundle web principal ≈ 560 kB (découpage à prévoir).
+- Bundle web principal ≈ 623 kB minifié, ≈ 176 kB gzip (découpage à prévoir).
 - Avertissement de dépréciation `pg` dans la pile Prisma (sans impact observé).
 - Pas de sauvegarde planifiée ni de supervision externe pour l'instant.
+- Aucun test sur appareil iOS/Android réel ni avec lecteur d'écran.

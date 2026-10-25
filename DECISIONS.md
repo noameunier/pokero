@@ -121,6 +121,47 @@ complètent le cahier des charges.
 - Export des données au format JSON.
 - Aucun compte de démonstration activé en production sans `SEED_DEMO=1`.
 
+## Refonte UI/UX
+
+- Branche dédiée `redesign/ui-ux`, créée depuis `main` (`56a1b77`). Aucune
+  modification d'API, de schéma Prisma, de migration, de contrat Zod ou de
+  logique métier.
+- Direction : anthracite à sous-ton vert, surfaces opaques, vert feutrine profond,
+  or rare, typographie éditoriale. Pas de dégradés violet/bleu, pas de
+  glassmorphism généralisé, pas d'ombres disproportionnées.
+- Tokens centralisés dans `apps/web/src/index.css`. Les classes publiques
+  existantes (`card`, `btn-*`, `input`, `badge`, `nav-link`, `stat-value`, etc.)
+  sont conservées et redéfinies pour propager le style sans réécrire la logique.
+- Polices auto-hébergées (`@fontsource-variable/manrope`,
+  `@fontsource/instrument-serif`) : rendu stable, pas de CDN, meilleure
+  confidentialité. Aucune bibliothèque de composants UI ajoutée.
+- Contrastes : les classes de texte à opacité sont interdites (183 occurrences
+  en V1, 0 en V2). Les tokens `cream-400` et `cream-500` ont été éclaircis pour
+  tenir 4,5:1 sur `night-800`.
+- Mobile : barre basse à 5 entrées, action « Créer » surélevée, libellés courts
+  (`Accueil`, `Créer`), cibles ≥ 44 px sur pointeur grossier, champs à 16 px
+  pour éviter le zoom iOS, zones sûres et `scroll-padding` pour le clavier.
+- Accessibilité : modale en portail avec piège de focus, `Escape`, restitution
+  du focus et `aria-*` ; `ConfirmDialog` remplace les `window.confirm` ;
+  `ErrorState` avec « Réessayer » ; lien d'évitement ; `focus-visible` or ;
+  `prefers-reduced-motion`.
+- Mouvement : transitions de 150 à 300 ms, une seule animation permanente (point
+  « en direct »). Le chrono reste purement serveur et ne dépend d'aucune
+  animation.
+- « Même nombre de jetons » : composant `ChipCountEditor` partagé par l'assistant
+  tournoi et l'éditeur de preset. La case globale coche/décoche toutes les
+  valeurs ; une valeur spécifique est conservée lors des allers-retours ; le
+  total nécessaire et l'alerte de stock sont affichés immédiatement.
+- Classement : les ex æquo renvoyés par le domaine sont affichés `1=` avec une
+  note. Le payload spectateur n'expose pas `tied`, donc aucun indicateur n'est
+  inventé côté public.
+- États : vide, chargement et erreur sont prévus sur les pages de données et
+  capturés. Le message réseau est explicite (« serveur injoignable »).
+- Tests E2E adaptés aux nouveaux composants (onglets `role="tab"`, dialogues de
+  confirmation, onglet « Données »), sans changer les attentes fonctionnelles.
+- Validation limitée à Chromium/Linux : aucun test sur appareil iOS/Android
+  réel, aucun lecteur d'écran, aucun audit axe automatisé.
+
 ## Mobile
 
 - Capacitor 8, maximum de code web partagé.

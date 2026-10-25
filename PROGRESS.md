@@ -1,6 +1,6 @@
 # PROGRESS — Pokero
 
-Dernière mise à jour : 2026-10-25 03:50 UTC
+Dernière mise à jour : 2026-10-25 12:20 UTC
 
 ## Statut global
 
@@ -10,6 +10,10 @@ Le parcours organisateur complet fonctionne de bout en bout : compte, mallettes 
 jetons, presets, création de tournoi, joueurs, caves/rebuys/add-ons, chronomètre
 serveur, éliminations, classement, clôture, liens spectateurs révocables,
 statistiques et suppression de compte RGPD.
+
+La refonte UI/UX est terminée sur la branche `redesign/ui-ux` et validée en
+local (typecheck, build, 76 tests unitaires/intégration, 3 scénarios E2E,
+captures avant/après). Elle n'est pas encore fusionnée ni déployée en production.
 
 L'application mobile Capacitor reste à faire (phase P9). Aucun test sur appareil
 réel, aucune compilation iOS et aucune publication sur les stores ne sont
@@ -30,6 +34,7 @@ revendiqués.
 | P8 — Qualité & docs | ✅ Terminé | RGPD, seed, docs, tests production, en-têtes de sécurité |
 | P9 — Mobile | ⏳ À faire | Capacitor Android/iOS (hors V1 web) |
 | P10 — Livraison | 🔄 En cours | Rapport final, sauvegardes, supervision |
+| P11 — Refonte UI/UX | ✅ Terminé (branche) | Design system, tous les écrans, mobile, accessibilité, captures |
 
 ## Réalisé
 
@@ -88,6 +93,24 @@ revendiqués.
   Caddy, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`.
 - `tsc --noEmit` vert et build Vite vert.
 
+### Refonte UI/UX (branche `redesign/ui-ux`)
+
+- Audit initial dans `UI_AUDIT.md`, système de design dans `DESIGN_SYSTEM.md`,
+  rapport de tests dans `TEST_REPORT.md`.
+- Tokens centralisés (anthracite, vert feutrine, or, ivoire), polices
+  auto-hébergées Manrope + Instrument Serif.
+- Bibliothèque `ui.tsx` refondue : boutons, champs, cartes, badges, onglets,
+  switch, modales accessibles, états vide/erreur/chargement.
+- Toutes les pages refondues, sans changement d'API ni de schéma de données.
+- Navigation mobile à 5 entrées avec action « Créer » surélevée, cibles
+  tactiles ≥ 44 px, zones sûres iOS, champs à 16 px.
+- `ChipCountEditor` partagé pour « Même nombre de jetons », avec total
+  nécessaire et alerte de stock.
+- Contrastes mesurés ≥ 4,71:1 pour le texte courant ; suppression des 183
+  classes de texte à opacité de la V1.
+- Captures avant/après dans `docs/ui/` (mobile, tablette, desktop + états).
+- Aucun test sur appareil iOS/Android réel.
+
 ### Seed de démonstration (`apps/api/prisma/seed.ts`)
 
 - Idempotent, activé uniquement par `SEED_DEMO=true`.
@@ -101,7 +124,8 @@ revendiqués.
 - Playwright/Chromium, scénario unique complet :
   inscription → mallette → tournoi → joueurs → démarrage du chrono → éliminations
   → clôture → lien spectateur valide → lien invalide → suppression de compte.
-- **1/1 scénario vert** avec API et Vite lancés par Playwright.
+- **3/3 scénarios verts** avec API et Vite lancés par Playwright : parcours
+  organisateur complet, saisie mobile, quantité commune de jetons.
 
 ### Déploiement
 
@@ -124,7 +148,9 @@ revendiqués.
 | `pnpm --filter @pokero/api typecheck` | ✅ |
 | `pnpm --filter @pokero/web typecheck` | ✅ |
 | `pnpm --filter @pokero/web build` | ✅ |
-| `pnpm --filter @pokero/web test:e2e` | 1/1 ✅ |
+| `pnpm --filter @pokero/web test:e2e` | 3/3 ✅ |
+| Captures Playwright avant/après | 59 avant, 135 après + 5 états ✅ |
+| Débordement horizontal (320 px, 13 routes) | 0 ✅ |
 | Smoke test HTTPS production (compte, mallette, tournoi, chrono, CSRF, idempotence, conflit de version, spectateur, révocation, suppression) | ✅ |
 | Redémarrage `docker compose restart api web` | API healthy en 2 s, session et données persistées ✅ |
 | `./infra/docker/backup.sh` + restauration dans une base temporaire | Archive valide, 3 tables contrôlées ✅ |
@@ -137,7 +163,8 @@ revendiqués.
 
 - `pg` signale un `client.query()` concurrent (avertissement de dépréciation
   provenant de la pile Prisma/adaptateur) ; aucune erreur fonctionnelle observée.
-- Bundle web principal ≈ 560 kB : découpage de code à prévoir.
+- Bundle web principal ≈ 623 kB minifié (≈ 176 kB gzip) : découpage de code à
+  prévoir.
 - Images Docker volumineuses (API ≈ 766 Mo, migrate ≈ 1,1 Go) : optimisation
   possible en séparant les dépendances de build et de migration.
 - La vérification d'email est désactivée en production tant qu'aucun SMTP réel
@@ -146,12 +173,13 @@ revendiqués.
 
 ## Prochaines étapes
 
-1. Ajouter une sauvegarde PostgreSQL planifiée et tester une restauration.
-2. Mettre en place une supervision (uptime, logs, alertes).
-3. Découper le bundle web et optimiser les images Docker.
-4. Ajouter un vrai SMTP puis activer `EMAIL_VERIFICATION_REQUIRED=true`.
-5. Démarrer la phase mobile Capacitor (Android debug puis iOS sur macOS).
-6. Compléter les tests E2E (reprise après coupure, PIN, multi-organisateurs,
+1. Fusionner `redesign/ui-ux` et redéployer la production.
+2. Ajouter une sauvegarde PostgreSQL planifiée et tester une restauration.
+3. Mettre en place une supervision (uptime, logs, alertes).
+4. Découper le bundle web et optimiser les images Docker.
+5. Ajouter un vrai SMTP puis activer `EMAIL_VERIFICATION_REQUIRED=true`.
+6. Démarrer la phase mobile Capacitor (Android debug puis iOS sur macOS).
+7. Compléter les tests E2E (reprise après coupure, PIN, multi-organisateurs,
    statistiques publiques, export RGPD).
 
 ## Blocages
