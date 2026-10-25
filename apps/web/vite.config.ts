@@ -18,8 +18,8 @@ export default defineConfig({
         description:
           'Organisez vos tournois de poker : caves, blindes, chronomètre serveur, classements et liens spectateurs.',
         lang: 'fr',
-        theme_color: '#0b3d2e',
-        background_color: '#041a13',
+        theme_color: '#070908',
+        background_color: '#070908',
         display: 'standalone',
         start_url: '/',
         scope: '/',
