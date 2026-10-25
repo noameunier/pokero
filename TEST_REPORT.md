@@ -54,10 +54,10 @@ Sortie de build :
 
 | Fichier | Taille |
 |---|---|
-| `index-*.js` | ≈ 623 kB minifié, ≈ 176 kB gzip |
-| `index-*.css` | ≈ 84 kB minifié, ≈ 17 kB gzip |
+| `index-*.js` | ≈ 646 kB minifié, ≈ 185 kB gzip |
+| `index-*.css` | ≈ 87 kB minifié, ≈ 18 kB gzip |
 | Polices | Manrope ≈ 25 kB, Instrument Serif ≈ 21–22 kB (woff2) |
-| Pré-cache PWA | 22 entrées, ≈ 848 KiB |
+| Pré-cache PWA | 27 entrées, ≈ 868 KiB |
 
 L’avertissement Vite sur la taille du chunk principal reste présent. Il est
 antérieur à la refonte et n’est pas bloquant ; aucun découpage de code n’a été

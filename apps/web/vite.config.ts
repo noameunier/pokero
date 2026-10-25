@@ -11,9 +11,15 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      includeAssets: [
+        'favicon.svg',
+        'favicon.ico',
+        'favicon-32.png',
+        'favicon-48.png',
+        'apple-touch-icon.png',
+      ],
       manifest: {
-        name: 'Pokero — gestion de tournois de poker',
+        name: 'Pokero · gestion de tournois de poker',
         short_name: 'Pokero',
         description:
           'Organisez vos tournois de poker : caves, blindes, chronomètre serveur, classements et liens spectateurs.',
