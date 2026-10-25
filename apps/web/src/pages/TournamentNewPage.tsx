@@ -39,14 +39,14 @@ interface ManualLevel {
 }
 
 const STEPS = ['stepInfo', 'stepChips', 'stepBlinds', 'stepOptions'] as const;
+const MAX_CHIPS_PER_PLAYER = 60;
 
 const NEW_PRESET_DEFAULTS = {
   players: 8,
   targetBuyIn: 10_000,
-  startingStack: 10_000,
-  maxChipsPerPlayer: 60,
   targetDurationMinutes: 180,
   levelDurationMinutes: 20,
+  firstLevelDurationMinutes: 20,
   breakDurationMinutes: 15,
   breakEveryLevels: 4,
   roundUnit: 25,
@@ -87,12 +87,10 @@ export function TournamentNewPage() {
   const [presetId, setPresetId] = useState(params.get('preset') ?? '');
   const [players, setPlayers] = useState(NEW_PRESET_DEFAULTS.players);
   const [targetBuyIn, setTargetBuyIn] = useState(NEW_PRESET_DEFAULTS.targetBuyIn);
-  const [startingStack, setStartingStack] = useState(NEW_PRESET_DEFAULTS.startingStack);
   const [mode, setMode] = useState<'AUTO' | 'MANUAL'>('AUTO');
   const [manualCounts, setManualCounts] = useState<Record<string, number>>({});
   const [commonEnabled, setCommonEnabled] = useState<Record<string, boolean>>({});
   const [commonCount, setCommonCount] = useState(0);
-  const [maxChipsPerPlayer, setMaxChipsPerPlayer] = useState(NEW_PRESET_DEFAULTS.maxChipsPerPlayer);
 
   const [autoGenerate, setAutoGenerate] = useState(true);
   const [targetDurationMinutes, setTargetDurationMinutes] = useState(
@@ -100,6 +98,9 @@ export function TournamentNewPage() {
   );
   const [levelDurationMinutes, setLevelDurationMinutes] = useState(
     NEW_PRESET_DEFAULTS.levelDurationMinutes,
+  );
+  const [firstLevelDurationMinutes, setFirstLevelDurationMinutes] = useState(
+    NEW_PRESET_DEFAULTS.firstLevelDurationMinutes,
   );
   const [breakDurationMinutes, setBreakDurationMinutes] = useState(
     NEW_PRESET_DEFAULTS.breakDurationMinutes,
@@ -162,8 +163,6 @@ export function TournamentNewPage() {
       | {
           players?: number;
           targetBuyIn?: number;
-          startingStack?: number;
-          maxChipsPerPlayer?: number;
           mode?: 'AUTO' | 'MANUAL';
           counts?: Record<string, number>;
           commonEnabled?: Record<string, boolean>;
@@ -175,6 +174,7 @@ export function TournamentNewPage() {
           autoGenerate?: boolean;
           targetDurationMinutes?: number;
           levelDurationMinutes?: number;
+          firstLevelDurationMinutes?: number;
           breakDurationMinutes?: number;
           breakEveryLevels?: number;
           roundUnit?: number;
@@ -202,8 +202,6 @@ export function TournamentNewPage() {
     }
     if (buyIn?.players) setPlayers(buyIn.players);
     if (buyIn?.targetBuyIn) setTargetBuyIn(buyIn.targetBuyIn);
-    if (buyIn?.startingStack) setStartingStack(buyIn.startingStack);
-    if (buyIn?.maxChipsPerPlayer) setMaxChipsPerPlayer(buyIn.maxChipsPerPlayer);
     if (buyIn?.mode) setMode(buyIn.mode);
     if (buyIn?.counts) setManualCounts(buyIn.counts);
     if (buyIn?.commonEnabled) setCommonEnabled(buyIn.commonEnabled);
@@ -211,6 +209,8 @@ export function TournamentNewPage() {
     if (blinds?.autoGenerate !== undefined) setAutoGenerate(blinds.autoGenerate);
     if (blinds?.targetDurationMinutes) setTargetDurationMinutes(blinds.targetDurationMinutes);
     if (blinds?.levelDurationMinutes) setLevelDurationMinutes(blinds.levelDurationMinutes);
+    if (blinds?.firstLevelDurationMinutes)
+      setFirstLevelDurationMinutes(blinds.firstLevelDurationMinutes);
     if (blinds?.breakDurationMinutes !== undefined)
       setBreakDurationMinutes(blinds.breakDurationMinutes);
     if (blinds?.breakEveryLevels !== undefined) setBreakEveryLevels(blinds.breakEveryLevels);
@@ -241,9 +241,7 @@ export function TournamentNewPage() {
       chipCaseId,
       players,
       targetBuyIn,
-      startingStack,
       mode,
-      maxChipsPerPlayer,
       JSON.stringify(manualCounts),
       JSON.stringify(commonEnabled),
       commonCount,
@@ -252,24 +250,25 @@ export function TournamentNewPage() {
       api.post<{ plan: BuyInPlan }>(`/api/chip-cases/${chipCaseId}/buyin/preview`, {
         players,
         targetBuyIn,
-        startingStack,
+        startingStack: targetBuyIn,
         mode,
         counts: mode === 'MANUAL' ? manualCounts : {},
         commonEnabled: mode === 'MANUAL' ? commonEnabled : {},
         commonCount: mode === 'MANUAL' ? commonCount : 0,
-        maxChipsPerPlayer,
+        maxChipsPerPlayer: MAX_CHIPS_PER_PLAYER,
       }),
-    enabled: Boolean(chipCaseId) && players >= 2 && targetBuyIn > 0 && startingStack > 0,
+    enabled: Boolean(chipCaseId) && players >= 2 && targetBuyIn > 0,
     retry: false,
   });
 
   const generatedLevels = useMemo(() => {
-    if (!autoGenerate || startingStack <= 0) return null;
+    if (!autoGenerate || targetBuyIn <= 0) return null;
     try {
       return generateBlindStructure({
-        startingStack,
+        startingStack: targetBuyIn,
         targetDurationMinutes,
         levelDurationMinutes,
+        firstLevelDurationMinutes,
         breakDurationMinutes,
         breakEveryLevels,
         roundUnit,
@@ -283,9 +282,10 @@ export function TournamentNewPage() {
     }
   }, [
     autoGenerate,
-    startingStack,
+    targetBuyIn,
     targetDurationMinutes,
     levelDurationMinutes,
+    firstLevelDurationMinutes,
     breakDurationMinutes,
     breakEveryLevels,
     roundUnit,
@@ -316,18 +316,19 @@ export function TournamentNewPage() {
         buyIn: {
           players,
           targetBuyIn,
-          startingStack,
+          startingStack: targetBuyIn,
           mode,
           counts: mode === 'MANUAL' ? manualCounts : {},
           commonEnabled: mode === 'MANUAL' ? commonEnabled : {},
           commonCount: mode === 'MANUAL' ? commonCount : 0,
-          maxChipsPerPlayer,
+          maxChipsPerPlayer: MAX_CHIPS_PER_PLAYER,
         },
         blinds: autoGenerate
           ? {
               autoGenerate: true,
               targetDurationMinutes,
               levelDurationMinutes,
+              firstLevelDurationMinutes,
               breakDurationMinutes,
               breakEveryLevels,
               roundUnit,
@@ -340,6 +341,7 @@ export function TournamentNewPage() {
               autoGenerate: false,
               targetDurationMinutes,
               levelDurationMinutes,
+              firstLevelDurationMinutes,
               breakDurationMinutes,
               breakEveryLevels,
               roundUnit,
@@ -386,7 +388,6 @@ export function TournamentNewPage() {
     }
     if (step === 1) {
       if (targetBuyIn <= 0) return setFormError('Indiquez une valeur de cave positive.');
-      if (startingStack <= 0) return setFormError('Indiquez un tapis de départ positif.');
       if (players < 2) return setFormError('Il faut au moins deux joueurs.');
       if (planQuery.error) return setFormError(errorMessage(planQuery.error));
       if (!planQuery.data) return setFormError('Calcul de la cave en cours…');
@@ -440,8 +441,31 @@ export function TournamentNewPage() {
   const applySuggestedBuyIn = () => {
     if (!suggestedBuyIn) return;
     setTargetBuyIn(suggestedBuyIn);
-    setStartingStack(suggestedBuyIn);
   };
+  const rebuyCapacity = useMemo(() => {
+    if (!plan) return null;
+    const usedTypes = plan.counts.filter((count) => count.perPlayer > 0);
+    if (usedTypes.length === 0) return 0;
+    let capacity = Number.POSITIVE_INFINITY;
+    for (const count of usedTypes) {
+      const free =
+        plan.freeStock.find((stock) => stock.chipTypeId === count.chipTypeId)?.available ?? 0;
+      capacity = Math.min(
+        capacity,
+        Math.max(0, Math.floor((free - count.total) / count.perPlayer)),
+      );
+    }
+    return Number.isFinite(capacity) ? capacity : 0;
+  }, [plan]);
+  const rebuysPerPlayer =
+    players > 0 && rebuyCapacity !== null ? Math.floor(rebuyCapacity / players) : 0;
+  const rebuyLimitExceedsCapacity =
+    rebuyEnabled &&
+    !rebuyUnlimited &&
+    Boolean(rebuyMax) &&
+    Number(rebuyMax) > 0 &&
+    rebuyCapacity !== null &&
+    players * Number(rebuyMax) > rebuyCapacity;
   const manualChipTypes = selectedChipCase?.chipTypes ?? [];
 
   const toggleCommon = (chipTypeId: string, enabled: boolean) =>
@@ -583,6 +607,84 @@ export function TournamentNewPage() {
 
           <Card className="p-4 sm:p-5">
             <div className="flex items-center justify-between gap-2">
+              <h2 className="font-display text-xl text-cream-50">Rebuys</h2>
+              <Badge tone={rebuyEnabled ? 'success' : 'neutral'}>
+                {rebuyEnabled ? 'Activés' : 'Désactivés'}
+              </Badge>
+            </div>
+            <p className="mt-1 text-[11.5px] leading-relaxed text-cream-400">
+              Capacité estimée avec le stock de la mallette, une cave de{' '}
+              {formatChips(targetBuyIn)} et {players} joueurs. Elle se met à jour à l’étape
+              Caves.
+            </p>
+            <div className="mt-3 rounded-[var(--radius-sm)] border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
+              {plan ? (
+                rebuyCapacity !== null && rebuyCapacity > 0 ? (
+                  <p className="text-[12.5px] leading-relaxed text-cream-300">
+                    Environ{' '}
+                    <strong className="tabular text-cream-50">
+                      {formatChips(rebuyCapacity)}
+                    </strong>{' '}
+                    rebuys possibles, soit{' '}
+                    <strong className="tabular text-cream-50">
+                      {formatChips(rebuysPerPlayer)}
+                    </strong>{' '}
+                    par joueur.
+                  </p>
+                ) : (
+                  <p className="text-[12.5px] leading-relaxed text-warning-300">
+                    Le stock restant ne permet pas de rebuy supplémentaire après les caves.
+                  </p>
+                )
+              ) : (
+                <p className="text-[12.5px] leading-relaxed text-cream-400">
+                  Sélectionnez une mallette pour estimer la capacité.
+                </p>
+              )}
+            </div>
+            <div className="mt-4">
+              <Switch
+                label="Rebuys activés"
+                hint="Recave un joueur éliminé tant que la limite n’est pas atteinte."
+                checked={rebuyEnabled}
+                onChange={setRebuyEnabled}
+              />
+            </div>
+            {rebuyEnabled ? (
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <Field label="Jusqu’au niveau">
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    value={rebuyUntilLevel}
+                    onChange={(event) => setRebuyUntilLevel(event.target.value)}
+                  />
+                </Field>
+                <Field label="Max par joueur" hint="Vide = illimité">
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={rebuyMax}
+                    placeholder={String(rebuysPerPlayer)}
+                    onChange={(event) => {
+                      setRebuyMax(event.target.value);
+                      setRebuyUnlimited(event.target.value === '');
+                    }}
+                  />
+                </Field>
+              </div>
+            ) : null}
+            {rebuyLimitExceedsCapacity ? (
+              <p className="mt-2 text-[11.5px] leading-relaxed text-warning-300">
+                La limite de {rebuyMax} rebuy(s) par joueur dépasse la capacité estimée du stock.
+              </p>
+            ) : null}
+          </Card>
+
+          <Card className="p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-2">
               <h2 className="font-display text-xl text-cream-50">Résumé de la mallette</h2>
               {selectedChipCase ? (
                 <Badge tone="neutral">{selectedChipCase.chipTypes.length} valeurs</Badge>
@@ -655,7 +757,6 @@ export function TournamentNewPage() {
                     const parsed = Number.parseInt(event.target.value, 10);
                     const value = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
                     setTargetBuyIn(value);
-                    setStartingStack(value);
                   }}
                 />
                 {mode === 'AUTO' && plan && !planQuery.isFetching ? (
@@ -678,31 +779,6 @@ export function TournamentNewPage() {
                     </>
                   ) : null
                 ) : null}
-              </Field>
-              <Field label={t('tournament.startingStack')} htmlFor="starting-stack">
-                <Input
-                  id="starting-stack"
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  step={100}
-                  value={startingStack || ''}
-                  onChange={(event) => {
-                    const parsed = Number.parseInt(event.target.value, 10);
-                    setStartingStack(Number.isFinite(parsed) && parsed > 0 ? parsed : 0);
-                  }}
-                />
-              </Field>
-              <Field label="Jetons max / joueur" htmlFor="max-chips">
-                <Input
-                  id="max-chips"
-                  type="number"
-                  inputMode="numeric"
-                  min={5}
-                  max={200}
-                  value={maxChipsPerPlayer}
-                  onChange={(event) => setMaxChipsPerPlayer(Number(event.target.value) || 60)}
-                />
               </Field>
             </div>
 
@@ -828,6 +904,16 @@ export function TournamentNewPage() {
                   <SummaryTile label="Total" value={formatChips(plan.totalValue)} hint="en jeu" />
                 </div>
 
+                {rebuyEnabled && rebuyCapacity !== null ? (
+                  <p className="rounded-[var(--radius-sm)] border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-[11.5px] leading-relaxed text-cream-400">
+                    Rebuys possibles avec ce stock :{' '}
+                    <strong className="tabular text-cream-100">
+                      {formatChips(rebuyCapacity)}
+                    </strong>{' '}
+                    ({formatChips(rebuysPerPlayer)} par joueur).
+                  </p>
+                ) : null}
+
                 {plan.warnings.length > 0 ? (
                   <ul className="space-y-1 rounded-[var(--radius-sm)] border border-warning-500/20 bg-warning-500/[0.06] px-3 py-2 text-[11.5px] leading-relaxed text-warning-300">
                     {plan.warnings.map((warning, index) => (
@@ -888,8 +974,26 @@ export function TournamentNewPage() {
                     onChange={(event) => setTargetDurationMinutes(Number(event.target.value) || 60)}
                   />
                 </Field>
-                <Field label={t('tournament.levelDuration')}>
+                <Field
+                  label="Premier niveau"
+                  hint="Souvent plus long"
+                  htmlFor="first-level-duration"
+                >
                   <Input
+                    id="first-level-duration"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={600}
+                    value={firstLevelDurationMinutes}
+                    onChange={(event) =>
+                      setFirstLevelDurationMinutes(Number(event.target.value) || 20)
+                    }
+                  />
+                </Field>
+                <Field label="Niveaux suivants" htmlFor="level-duration">
+                  <Input
+                    id="level-duration"
                     type="number"
                     inputMode="numeric"
                     min={1}
@@ -1116,40 +1220,8 @@ export function TournamentNewPage() {
       {step === 3 ? (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <Card className="p-4 sm:p-5">
-            <h2 className="font-display text-xl text-cream-50">Rebuys & add-ons</h2>
+            <h2 className="font-display text-xl text-cream-50">Add-ons</h2>
             <div className="mt-4 space-y-3">
-              <Switch
-                label="Rebuys activés"
-                hint="Recave un joueur éliminé tant que la limite n’est pas atteinte."
-                checked={rebuyEnabled}
-                onChange={setRebuyEnabled}
-              />
-              {rebuyEnabled ? (
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Jusqu’au niveau">
-                    <Input
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      value={rebuyUntilLevel}
-                      onChange={(event) => setRebuyUntilLevel(event.target.value)}
-                    />
-                  </Field>
-                  <Field label="Max par joueur" hint="Vide = illimité">
-                    <Input
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      value={rebuyMax}
-                      onChange={(event) => {
-                        setRebuyMax(event.target.value);
-                        setRebuyUnlimited(event.target.value === '');
-                      }}
-                    />
-                  </Field>
-                </div>
-              ) : null}
-              <div className="divider" />
               <Switch
                 label="Add-ons activés"
                 hint="Complément de jetons facultatif en fin de période de rebuy."

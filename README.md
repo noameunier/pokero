@@ -83,8 +83,8 @@ Variables principales de `apps/api/.env` :
 ## Tests
 
 ```bash
-pnpm --filter @pokero/domain test       # 47 tests unitaires
-pnpm --filter @pokero/api test          # 29 tests d'intégration (base pokero_test)
+pnpm --filter @pokero/domain test       # 48 tests unitaires
+pnpm --filter @pokero/api test          # 31 tests d'intégration (base pokero_test)
 pnpm --filter @pokero/web test:e2e      # 5 scénarios Playwright
 pnpm typecheck                          # tous les paquets
 pnpm build                              # API + web
@@ -165,7 +165,7 @@ temporaire avant d'agir en production.
 - Vérification d'email désactivée en production faute de SMTP réel.
 - Application mobile Capacitor non commencée ; aucune publication sur les stores
   n'est revendiquée.
-- Bundle web principal ≈ 623 kB minifié, ≈ 176 kB gzip (découpage à prévoir).
+- Bundle web principal ≈ 648 kB minifié, ≈ 185 kB gzip (découpage à prévoir).
 - Avertissement de dépréciation `pg` dans la pile Prisma (sans impact observé).
 - Pas de sauvegarde planifiée ni de supervision externe pour l'instant.
 - Aucun test sur appareil iOS/Android réel ni avec lecteur d'écran.

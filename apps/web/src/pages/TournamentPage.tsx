@@ -1302,8 +1302,9 @@ export function TournamentPage() {
           </>
         }
       >
-        <Field label={t('tournament.pin')}>
+        <Field label={t('tournament.pin')} htmlFor="tournament-pin-unlock">
           <Input
+            id="tournament-pin-unlock"
             inputMode="numeric"
             pattern="\d{4,8}"
             maxLength={8}

@@ -43,6 +43,7 @@ interface PresetConfig {
     autoGenerate: boolean;
     targetDurationMinutes: number;
     levelDurationMinutes: number;
+    firstLevelDurationMinutes: number;
     breakDurationMinutes: number;
     breakEveryLevels: number;
     roundUnit: number;
@@ -91,6 +92,7 @@ export function defaultPresetConfig(): PresetConfig {
       autoGenerate: true,
       targetDurationMinutes: 180,
       levelDurationMinutes: 20,
+      firstLevelDurationMinutes: 20,
       breakDurationMinutes: 15,
       breakEveryLevels: 4,
       roundUnit: 25,
@@ -184,7 +186,14 @@ export function PresetEditorPage() {
       const payload = {
         name: name.trim(),
         description: description.trim() || null,
-        config,
+        config: {
+          ...config,
+          buyIn: {
+            ...config.buyIn,
+            startingStack: config.buyIn.targetBuyIn,
+            maxChipsPerPlayer: 60,
+          },
+        },
       };
       if (isNew) return api.post<{ preset: Preset }>('/api/presets', payload);
       return api.patch<{ preset: Preset }>(`/api/presets/${id}`, payload);
@@ -367,30 +376,6 @@ export function PresetEditorPage() {
                   }}
                 />
               </Field>
-              <Field label={t('tournament.startingStack')} htmlFor="preset-stack">
-                <Input
-                  id="preset-stack"
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  step={100}
-                  value={config.buyIn.startingStack}
-                  onChange={(event) => patchBuyIn({ startingStack: Number(event.target.value) || 1 })}
-                />
-              </Field>
-              <Field label="Jetons max / joueur" htmlFor="preset-max-chips">
-                <Input
-                  id="preset-max-chips"
-                  type="number"
-                  inputMode="numeric"
-                  min={5}
-                  max={200}
-                  value={config.buyIn.maxChipsPerPlayer}
-                  onChange={(event) =>
-                    patchBuyIn({ maxChipsPerPlayer: Number(event.target.value) || 60 })
-                  }
-                />
-              </Field>
             </div>
 
             <div
@@ -500,7 +485,22 @@ export function PresetEditorPage() {
                     }
                   />
                 </Field>
-                <Field label={t('tournament.levelDuration')} htmlFor="preset-level-duration">
+                <Field label="Premier niveau" htmlFor="preset-first-level">
+                  <Input
+                    id="preset-first-level"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={600}
+                    value={config.blinds.firstLevelDurationMinutes}
+                    onChange={(event) =>
+                      patchBlinds({
+                        firstLevelDurationMinutes: Number(event.target.value) || 20,
+                      })
+                    }
+                  />
+                </Field>
+                <Field label="Niveaux suivants" htmlFor="preset-level-duration">
                   <Input
                     id="preset-level-duration"
                     type="number"
@@ -716,10 +716,13 @@ export function PresetEditorPage() {
                   config.blinds.autoGenerate
                     ? `${Math.max(
                         1,
-                        Math.round(
-                          config.blinds.targetDurationMinutes /
-                            Math.max(1, config.blinds.levelDurationMinutes),
-                        ),
+                        Math.ceil(
+                          Math.max(
+                            0,
+                            config.blinds.targetDurationMinutes -
+                              config.blinds.firstLevelDurationMinutes,
+                          ) / Math.max(1, config.blinds.levelDurationMinutes),
+                        ) + 1,
                       )} estimés`
                     : `${config.blinds.levels?.length ?? 0} définis`
                 }

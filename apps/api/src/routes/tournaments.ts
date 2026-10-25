@@ -117,12 +117,16 @@ export async function tournamentRoutes(app: FastifyInstance): Promise<void> {
       if (!preset) throw AppError.badRequest('UNKNOWN_PRESET', 'Preset introuvable.');
     }
 
+    // Une cave et un tapis de départ sont la même valeur : le tapis suit toujours la cave.
+    input.buyIn.startingStack = input.buyIn.targetBuyIn;
+
     let domainLevels;
     if (input.blinds.autoGenerate) {
       const generated = generateBlindStructure({
         startingStack: input.buyIn.startingStack,
         targetDurationMinutes: input.blinds.targetDurationMinutes,
         levelDurationMinutes: input.blinds.levelDurationMinutes,
+        firstLevelDurationMinutes: input.blinds.firstLevelDurationMinutes,
         breakDurationMinutes: input.blinds.breakDurationMinutes,
         breakEveryLevels: input.blinds.breakEveryLevels,
         startingSmallBlind: input.blinds.startingSmallBlind,

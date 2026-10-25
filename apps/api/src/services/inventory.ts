@@ -53,7 +53,12 @@ export async function fetchFreeStock(
   });
   const reservations = await client.inventoryReservation.groupBy({
     by: ['chipTypeId'],
-    where: { chipTypeId: { in: chipTypeIds }, status: 'ACTIVE' },
+    where: {
+      chipTypeId: { in: chipTypeIds },
+      status: 'ACTIVE',
+      // Les réservations d’un tournoi clos ne doivent plus bloquer le stock.
+      tournament: { status: { notIn: ['COMPLETED', 'CANCELLED'] } },
+    },
     _sum: { quantity: true },
   });
   const reserved = new Map(reservations.map((row) => [row.chipTypeId, row._sum.quantity ?? 0]));

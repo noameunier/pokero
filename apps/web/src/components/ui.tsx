@@ -329,10 +329,14 @@ export function Modal({
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     window.setTimeout(() => {
-      const focusable = panelRef.current?.querySelector<HTMLElement>(
-        '[autofocus], input:not([type="hidden"]), select, textarea, button',
+      // Priorité aux champs de saisie : un dialogue avec formulaire ne doit pas
+      // laisser le focus sur le bouton de fermeture.
+      const autofocus = panelRef.current?.querySelector<HTMLElement>('[autofocus]');
+      const field = panelRef.current?.querySelector<HTMLElement>(
+        'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])',
       );
-      (focusable ?? panelRef.current)?.focus();
+      const firstButton = panelRef.current?.querySelector<HTMLElement>('button:not([disabled])');
+      (autofocus ?? field ?? firstButton ?? panelRef.current)?.focus();
     }, 30);
     return () => {
       document.removeEventListener('keydown', onKey);

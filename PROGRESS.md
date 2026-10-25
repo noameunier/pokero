@@ -13,7 +13,7 @@ statistiques et suppression de compte RGPD.
 
 La refonte UI/UX est terminée, fusionnée sur `main` et **déployée en
 production** le 25 octobre 2026. Elle a été validée en local (typecheck, build,
-76 tests unitaires/intégration, 5 scénarios E2E, captures avant/après) puis
+79 tests unitaires/intégration, 5 scénarios E2E, captures avant/après) puis
 vérifiée en HTTPS (santé, thème, polices, absence d'erreur console).
 
 L'application mobile Capacitor reste à faire (phase P9). Aucun test sur appareil
@@ -51,7 +51,7 @@ revendiqués.
   manuelles et programmées, ajout/retrait de temps, trois modes de récupération,
   structure épuisée sans vainqueur automatique.
 - Classement final et statistiques joueur multi-organisateurs.
-- **47 tests unitaires verts**, `tsc --noEmit` vert.
+- **48 tests unitaires verts**, `tsc --noEmit` vert.
 
 ### Contrats (`packages/contracts`)
 
@@ -79,7 +79,7 @@ revendiqués.
   affichée une seule fois à la création.
 - Statistiques personnelles et profils publics opt-in.
 - RGPD : export JSON complet, suppression avec anonymisation des participations.
-- **29 tests d'intégration verts**, `tsc --noEmit` vert.
+- **31 tests d'intégration verts**, `tsc --noEmit` vert.
 
 ### Web (`apps/web`)
 
@@ -143,10 +143,10 @@ revendiqués.
 
 | Commande / contrôle | Résultat |
 |---|---|
-| `pnpm --filter @pokero/domain test` | 47/47 ✅ |
+| `pnpm --filter @pokero/domain test` | 48/48 ✅ |
 | `pnpm --filter @pokero/domain typecheck` | ✅ |
 | `pnpm --filter @pokero/contracts typecheck` | ✅ |
-| `pnpm --filter @pokero/api test` | 29/29 ✅ |
+| `pnpm --filter @pokero/api test` | 31/31 ✅ |
 | `pnpm --filter @pokero/api typecheck` | ✅ |
 | `pnpm --filter @pokero/web typecheck` | ✅ |
 | `pnpm --filter @pokero/web build` | ✅ |
@@ -166,7 +166,7 @@ revendiqués.
 
 - `pg` signale un `client.query()` concurrent (avertissement de dépréciation
   provenant de la pile Prisma/adaptateur) ; aucune erreur fonctionnelle observée.
-- Bundle web principal ≈ 623 kB minifié (≈ 176 kB gzip) : découpage de code à
+- Bundle web principal ≈ 648 kB minifié (≈ 185 kB gzip) : découpage de code à
   prévoir.
 - Images Docker volumineuses (API ≈ 766 Mo, migrate ≈ 1,1 Go) : optimisation
   possible en séparant les dépendances de build et de migration.

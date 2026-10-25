@@ -43,6 +43,8 @@ export interface BlindsRequest {
   startingStack: number;
   targetDurationMinutes: number;
   levelDurationMinutes?: number;
+  /** Durée du premier niveau, souvent plus longue que les suivantes. */
+  firstLevelDurationMinutes?: number;
   breakDurationMinutes?: number;
   breakEveryLevels?: number;
   startingSmallBlind?: number;
@@ -83,6 +85,7 @@ export function generateBlindStructure(request: BlindsRequest): BlindStructure {
   assertInteger(request.targetDurationMinutes, 'Durée cible', { min: 1 });
 
   const levelMinutes = request.levelDurationMinutes ?? DEFAULT_LEVEL_MINUTES;
+  const firstLevelMinutes = request.firstLevelDurationMinutes ?? levelMinutes;
   const breakMinutes = request.breakDurationMinutes ?? DEFAULT_BREAK_MINUTES;
   const breakEvery = Math.max(0, request.breakEveryLevels ?? DEFAULT_BREAK_EVERY);
   const roundUnit = Math.max(1, request.roundUnit ?? 1);
@@ -91,6 +94,7 @@ export function generateBlindStructure(request: BlindsRequest): BlindStructure {
   const maxLevels = Math.max(1, request.maxLevels ?? DEFAULT_MAX_LEVELS);
 
   assertInteger(levelMinutes, 'Durée d’un niveau', { min: 1 });
+  assertInteger(firstLevelMinutes, 'Durée du premier niveau', { min: 1 });
   assertInteger(breakMinutes, 'Durée d’une pause', { min: 0 });
 
   const startingSmallBlind =
@@ -108,6 +112,7 @@ export function generateBlindStructure(request: BlindsRequest): BlindStructure {
   const playLevelCount = countPlayLevels({
     targetDurationMinutes: request.targetDurationMinutes,
     levelMinutes,
+    firstLevelMinutes,
     breakMinutes,
     breakEvery,
     maxLevels,
@@ -134,14 +139,15 @@ export function generateBlindStructure(request: BlindsRequest): BlindStructure {
         ? Math.max(roundUnit, roundTo(bigBlind * antePercent, roundUnit))
         : 0;
 
-    cumulative += levelMinutes;
+    const durationMinutes = index === 0 ? firstLevelMinutes : levelMinutes;
+    cumulative += durationMinutes;
     levels.push({
       position: levels.length + 1,
       kind: 'PLAY',
       smallBlind,
       bigBlind,
       ante: ante > 0 ? ante : null,
-      durationMinutes: levelMinutes,
+      durationMinutes,
       cumulativeMinutes: cumulative,
     });
 
@@ -214,13 +220,15 @@ export function generateBlindStructure(request: BlindsRequest): BlindStructure {
 function countPlayLevels(input: {
   targetDurationMinutes: number;
   levelMinutes: number;
+  firstLevelMinutes: number;
   breakMinutes: number;
   breakEvery: number;
   maxLevels: number;
 }): number {
   for (let count = 1; count <= input.maxLevels; count += 1) {
     const breaks = input.breakEvery > 0 ? Math.floor((count - 1) / input.breakEvery) : 0;
-    const total = count * input.levelMinutes + breaks * input.breakMinutes;
+    const total =
+      input.firstLevelMinutes + (count - 1) * input.levelMinutes + breaks * input.breakMinutes;
     if (total >= input.targetDurationMinutes) return count;
   }
   return input.maxLevels;

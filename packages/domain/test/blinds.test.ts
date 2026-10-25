@@ -23,6 +23,23 @@ describe('génération des blindes', () => {
     expect(structure.totalDurationMinutes).toBeLessThan(240);
   });
 
+  it('applique une durée spécifique au premier niveau', () => {
+    const withFirstLevel = generateBlindStructure({
+      startingStack: 20_000,
+      targetDurationMinutes: 180,
+      levelDurationMinutes: 20,
+      firstLevelDurationMinutes: 40,
+      breakDurationMinutes: 15,
+      breakEveryLevels: 4,
+      roundUnit: 25,
+      startingSmallBlind: 100,
+    });
+    const playLevels = withFirstLevel.levels.filter((level) => level.kind === 'PLAY');
+    expect(playLevels[0]!.durationMinutes).toBe(40);
+    expect(playLevels[1]!.durationMinutes).toBe(20);
+    expect(withFirstLevel.levels[0]!.cumulativeMinutes).toBe(40);
+  });
+
   it('respecte SB = BB / 2 et les multiples de la dénomination', () => {
     for (const level of structure.levels.filter((item) => item.kind === 'PLAY')) {
       expect(level.bigBlind).toBe(level.smallBlind! * 2);

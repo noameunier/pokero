@@ -50,20 +50,36 @@ test('parcours organisateur complet : compte, mallette, tournoi, spectateur, sup
   await expect(page.getByText('Distribution des caves')).toBeVisible();
   await expect(page.getByText('Valeur exacte')).toBeVisible();
   await expect(page.getByText('par joueur', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(/Rebuys possibles avec ce stock/)).toBeVisible();
   await page.getByRole('button', { name: 'Suivant' }).click();
 
-  // Étape structure : la prévisualisation est générée côté client.
+  // Étape structure : premier niveau distinct, prévisualisation générée côté client.
   await expect(page.getByText('Aperçu de la structure')).toBeVisible();
+  await page.locator('#first-level-duration').fill('40');
+  await expect(page.locator('table tbody tr').first().getByText('40 min')).toBeVisible();
   await expect(page.getByText(/niveaux de jeu/)).toBeVisible();
   await page.getByRole('button', { name: 'Suivant' }).click();
 
-  // Étape options : classement public pour le lien spectateur.
+  // Étape options : classement public et PIN.
   await expect(page.getByText('Affichage & sécurité')).toBeVisible();
   await page.getByRole('switch', { name: 'Classement public' }).click();
+  await page.locator('#tournament-pin').fill('1234');
   await page.getByRole('button', { name: 'Créer' }).click();
 
   await expect(page.getByRole('heading', { name: tournamentName })).toBeVisible();
   await expect(page.locator('.badge', { hasText: 'Brouillon' })).toBeVisible();
+
+  // Le champ PIN du dialogue de déverrouillage doit recevoir le focus et la saisie.
+  await expect(page.getByText('Ce tournoi est protégé par un PIN.')).toBeVisible();
+  await page.getByRole('button', { name: 'Déverrouiller' }).click();
+  const pinDialog = page.getByRole('dialog', { name: 'Déverrouiller' });
+  const pinInput = pinDialog.locator('#tournament-pin-unlock');
+  await expect(pinInput).toBeFocused();
+  await pinInput.fill('1234');
+  await pinDialog.getByRole('button', { name: 'Déverrouiller' }).click();
+  await expect(
+    page.getByText('Tournoi déverrouillé pour 30 minutes', { exact: true }),
+  ).toBeVisible();
 
   // --- Joueurs -----------------------------------------------------------
   for (const player of players) {

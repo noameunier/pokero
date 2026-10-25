@@ -2,6 +2,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import {
   addParticipants,
+  BLINDS,
+  BUY_IN,
   clockCommand,
   createChipCase,
   createTournament,
@@ -46,6 +48,57 @@ describe('tournois et inventaire', () => {
     const reservations = await app.prisma.inventoryReservation.findMany({ where: { tournamentId: id } });
     expect(reservations.length).toBeGreaterThan(0);
     expect(reservations.every((reservation) => reservation.status === 'ACTIVE')).toBe(true);
+  });
+
+  it('aligne le tapis sur la cave et applique la durée du premier niveau', async () => {
+    const chipCaseId = await createChipCase(client);
+    const { id } = await createTournament(client, chipCaseId, {
+      buyIn: { ...BUY_IN, targetBuyIn: 2_800, startingStack: 99_999 },
+      blinds: {
+        ...BLINDS,
+        levelDurationMinutes: 20,
+        firstLevelDurationMinutes: 40,
+      },
+    });
+
+    const detail = await request(client, { method: 'GET', url: `/api/tournaments/${id}` });
+    const payload = detail.json() as {
+      tournament: {
+        settings: { buyIn: { startingStack: number; targetBuyIn: number } };
+        levels: Array<{ durationMinutes: number }>;
+      };
+    };
+    expect(payload.tournament.settings.buyIn.targetBuyIn).toBe(2_800);
+    expect(payload.tournament.settings.buyIn.startingStack).toBe(2_800);
+    expect(payload.tournament.levels[0]!.durationMinutes).toBe(40);
+    expect(payload.tournament.levels[1]!.durationMinutes).toBe(20);
+  });
+
+  it('ignore les réservations d’un tournoi clos dans le stock libre', async () => {
+    const chipCaseId = await createChipCase(client, {
+      chipTypes: [{ label: 'Blanc', color: '#FFFFFF', value: 25, quantity: 10 }],
+    });
+    const { id } = await createTournament(client, chipCaseId, {
+      buyIn: { ...BUY_IN, players: 2, targetBuyIn: 50 },
+    });
+
+    const before = await request(client, { method: 'GET', url: `/api/chip-cases/${chipCaseId}` });
+    const beforePayload = before.json() as {
+      chipCase: { chipTypes: Array<{ quantity: number; freeQuantity: number }> };
+    };
+    expect(beforePayload.chipCase.chipTypes[0]!.freeQuantity).toBeLessThan(
+      beforePayload.chipCase.chipTypes[0]!.quantity,
+    );
+
+    // Simule une réservation restée ACTIVE sur un tournoi pourtant terminé.
+    await app.prisma.tournament.update({ where: { id }, data: { status: 'COMPLETED' } });
+    const after = await request(client, { method: 'GET', url: `/api/chip-cases/${chipCaseId}` });
+    const afterPayload = after.json() as {
+      chipCase: { chipTypes: Array<{ quantity: number; freeQuantity: number }> };
+    };
+    expect(afterPayload.chipCase.chipTypes[0]!.freeQuantity).toBe(
+      afterPayload.chipCase.chipTypes[0]!.quantity,
+    );
   });
 
   it('refuse un tournoi qui dépasse le stock disponible', async () => {

@@ -110,6 +110,7 @@ export const blindConfigSchema = z.object({
   autoGenerate: z.boolean().default(true),
   targetDurationMinutes: z.number().int().min(10).max(1440).default(180),
   levelDurationMinutes: z.number().int().min(1).max(120).default(20),
+  firstLevelDurationMinutes: z.number().int().min(1).max(600).optional(),
   breakDurationMinutes: z.number().int().min(0).max(120).default(15),
   breakEveryLevels: z.number().int().min(0).max(20).default(4),
   startingSmallBlind: positiveIntSchema.optional(),

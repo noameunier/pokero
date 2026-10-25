@@ -133,7 +133,12 @@ export async function chipCaseRoutes(app: FastifyInstance): Promise<void> {
 
       const reservations = await app.prisma.inventoryReservation.groupBy({
         by: ['chipTypeId'],
-        where: { chipTypeId: { in: existing.chipTypes.map((type) => type.id) }, status: 'ACTIVE' },
+        where: {
+          chipTypeId: { in: existing.chipTypes.map((type) => type.id) },
+          status: 'ACTIVE',
+          // Un tournoi terminé ou annulé ne réserve plus ses jetons.
+          tournament: { status: { notIn: ['COMPLETED', 'CANCELLED'] } },
+        },
         _sum: { quantity: true },
       });
       const reserved = new Map(
@@ -228,7 +233,11 @@ export async function chipCaseRoutes(app: FastifyInstance): Promise<void> {
     }
 
     const reservations = await app.prisma.inventoryReservation.aggregate({
-      where: { chipTypeId: chipType.id, status: 'ACTIVE' },
+      where: {
+        chipTypeId: chipType.id,
+        status: 'ACTIVE',
+        tournament: { status: { notIn: ['COMPLETED', 'CANCELLED'] } },
+      },
       _sum: { quantity: true },
     });
     const reserved = reservations._sum.quantity ?? 0;
