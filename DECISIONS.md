@@ -5,11 +5,15 @@ complètent le cahier des charges.
 
 ## Architecture
 
-- **Monorepo pnpm** : `apps/web`, `apps/api`, `apps/mobile`, `packages/domain`,
-  `packages/contracts`, `packages/ui`, `packages/config`.
+- **Monorepo pnpm** : `apps/web`, `apps/api`, `packages/domain`,
+  `packages/contracts`. Les paquets `ui`/`config` ne sont pas nécessaires à ce
+  stade et ne sont pas créés.
 - **TypeScript strict** partout ; la logique métier est isolée dans
   `packages/domain`, sans dépendance à React, Fastify ou Prisma.
 - **Pas de microservices.** Un seul déploiement API + un frontend statique.
+- Prisma 7 utilise `apps/api/prisma7.config.ts`, le générateur `prisma-client`
+  vers `apps/api/generated/prisma` (non commité) et l'adaptateur
+  `@prisma/adapter-pg`.
 
 ## Déploiement
 
@@ -19,6 +23,17 @@ complètent le cahier des charges.
   - `/api/*` et `/socket.io/*` → `127.0.0.1:4000` (API).
 - PostgreSQL n'est jamais exposé publiquement.
 - Le vhost OpenCode n'est pas modifié.
+- `docker-compose.prod.yml` orchestre PostgreSQL, une migration one-shot, l'API
+  et le web. La migration doit réussir avant le démarrage de l'API.
+- L'API et le web sont liés à `127.0.0.1`, en lecture seule, sans capabilities,
+  avec `no-new-privileges` et healthchecks.
+- Le web de production est un petit serveur Node statique (`apps/web/server.mjs`)
+  qui sert la SPA et applique les en-têtes de sécurité, plutôt qu'un serveur
+  générique non maîtrisé.
+- Les images Docker sont construites depuis les mêmes sources que le
+  développement ; aucun secret n'est copié dans les images (`.env` exclu par
+  `.dockerignore`).
+
 
 ## Base de données
 
@@ -36,6 +51,24 @@ complètent le cahier des charges.
 - Rate limiting sur l'authentification et les mutations sensibles.
 - PIN de tournoi : verrou secondaire facultatif, hash Argon2id, déverrouillage
   limité dans le temps et journalisé. Il ne remplace jamais l'authentification.
+- Vérification d'email **désactivée en production** tant qu'aucun SMTP réel
+  n'existe ; Mailpit reste réservé au développement local.
+- Les liens spectateurs sont des tokens aléatoires dont seul le hash est stocké.
+  L'URL n'est affichée qu'une fois, à la création ; la révocation est immédiate
+  et les liens révoqués renvoient 404.
+- Le seed de démonstration est idempotent et strictement conditionné par
+  `SEED_DEMO=true` ; il est désactivé en production.
+
+## Tests
+
+- Tests unitaires du domaine avec Vitest.
+- Tests d'intégration API contre une base PostgreSQL dédiée (`pokero_test`),
+  avec les vraies migrations et les vrais plugins de sécurité.
+- Un scénario Playwright couvre le parcours organisateur complet, du compte à la
+  suppression RGPD, en passant par le lien spectateur.
+- Les tests de production sont effectués en HTTPS via l'API réelle (cookies
+  `Secure`, CSRF, idempotence, conflit de version, révocation) ; aucune
+  vérification n'est simulée.
 
 ## Chronomètre
 

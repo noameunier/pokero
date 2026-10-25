@@ -1,33 +1,39 @@
 # PROGRESS — Pokero
 
-Dernière mise à jour : 2026-10-25
+Dernière mise à jour : 2026-10-25 03:50 UTC
 
 ## Statut global
 
-**Phase 1 (bootstrap) — en cours.**
+**V1 web déployée en production** sur <https://pokero.noameunier.fr>.
 
-Le socle de domaine métier est implémenté et testé. L'API, la base de données,
-l'interface web et le déploiement restent à construire.
+Le parcours organisateur complet fonctionne de bout en bout : compte, mallettes de
+jetons, presets, création de tournoi, joueurs, caves/rebuys/add-ons, chronomètre
+serveur, éliminations, classement, clôture, liens spectateurs révocables,
+statistiques et suppression de compte RGPD.
+
+L'application mobile Capacitor reste à faire (phase P9). Aucun test sur appareil
+réel, aucune compilation iOS et aucune publication sur les stores ne sont
+revendiqués.
 
 ## Phases
 
 | Phase | Statut | Détail |
 |---|---|---|
 | P0 — Préparation | ✅ Terminé | Environnement vérifié, DNS + TLS + vhost Caddy opérationnels |
-| P1 — Bootstrap | 🔄 En cours | Monorepo pnpm, TypeScript, domaine métier testé |
-| P2 — Comptes & sécurité | ⏳ À faire | Auth, sessions, rôles, admin |
-| P3 — Domaine persistant | ⏳ À faire | Prisma, mallettes, inventaire, presets |
-| P4 — Tournois & chrono | ⏳ À faire | API tournois, Socket.IO, reprise |
-| P5 — Interface web | ⏳ À faire | 20 écrans, PWA, i18n |
-| P6 — Tests E2E | ⏳ À faire | Scénarios A→L |
-| P7 — Déploiement | ⏳ À faire | Compose, migrations, sauvegardes |
-| P8 — Qualité & docs | ⏳ À faire | Perf, sécurité, RGPD, docs |
-| P9 — Mobile | ⏳ À faire | Capacitor Android/iOS |
-| P10 — Livraison | ⏳ À faire | Rapport final |
+| P1 — Bootstrap | ✅ Terminé | Monorepo pnpm, TypeScript strict, domaine métier testé |
+| P2 — Comptes & sécurité | ✅ Terminé | Auth Argon2id, sessions opaques, CSRF, rate limiting, PIN tournoi |
+| P3 — Domaine persistant | ✅ Terminé | Prisma 7, mallettes, inventaire, presets, réservations |
+| P4 — Tournois & chrono | ✅ Terminé | API tournois, Socket.IO, heartbeat, 3 modes de reprise |
+| P5 — Interface web | ✅ Terminé | 12 pages, PWA, i18n FR + EN, console + projection + spectateur |
+| P6 — Tests E2E | ✅ Terminé | Scénario Playwright complet A→L vert |
+| P7 — Déploiement | ✅ Terminé | Compose, migrations one-shot, HTTPS, redémarrages vérifiés |
+| P8 — Qualité & docs | ✅ Terminé | RGPD, seed, docs, tests production, en-têtes de sécurité |
+| P9 — Mobile | ⏳ À faire | Capacitor Android/iOS (hors V1 web) |
+| P10 — Livraison | 🔄 En cours | Rapport final, sauvegardes, supervision |
 
 ## Réalisé
 
-### P1 — domaine (`packages/domain`)
+### Domaine (`packages/domain`)
 
 - Distribution des caves : programmation dynamique bornée, objectif exact puis
   meilleure approximation, contraintes de stock et de réserves, repli glouton.
@@ -41,22 +47,115 @@ l'interface web et le déploiement restent à construire.
 - Classement final et statistiques joueur multi-organisateurs.
 - **47 tests unitaires verts**, `tsc --noEmit` vert.
 
-## Tests exécutés
+### Contrats (`packages/contracts`)
 
-| Commande | Résultat |
+- Schémas Zod partagés pour auth, mallettes, presets, tournois, participants,
+  caves/rebuys/add-ons, éliminations, commandes de chrono, PIN, spectateurs,
+  export/suppression RGPD.
+- Types TypeScript dérivés utilisés par l'API et le web.
+
+### API (`apps/api`)
+
+- Fastify 5, Prisma 7 (`prisma-client` + adaptateur `@prisma/adapter-pg`).
+- PostgreSQL 17, migration initiale `20261025025438_init`.
+- Auth : Argon2id, sessions opaques en base (hash SHA-256 + pepper), cookie
+  httpOnly `SameSite=Lax` `Secure`, CSRF double-submit + contrôle d'origine,
+  rate limiting, vérification d'email (désactivée en prod faute de SMTP réel).
+- Isolation stricte par organisateur sur toutes les ressources.
+- Mallettes et inventaire : stock, réservations, ajustements, archivage.
+- Presets versionnés.
+- Tournois : création assistée, joueurs, caves, rebuys, add-ons, éliminations,
+  annulation d'élimination, clôture, classement final.
+- Chronomètre : autorité serveur, version monotone, idempotence, auto-avance,
+  heartbeat, trois modes de récupération, PIN secondaire facultatif.
+- Temps réel Socket.IO + planificateur de chrono toutes les secondes.
+- Liens spectateurs révocables : token aléatoire, seul le hash est stocké, URL
+  affichée une seule fois à la création.
+- Statistiques personnelles et profils publics opt-in.
+- RGPD : export JSON complet, suppression avec anonymisation des participations.
+- **28 tests d'intégration verts**, `tsc --noEmit` vert.
+
+### Web (`apps/web`)
+
+- React 19 + Vite 8 + Tailwind 4 + TanStack Query + React Router.
+- Pages : connexion, inscription, mot de passe oublié/réinitialisation, tableau de
+  bord, mallettes (liste + éditeur), presets (liste + éditeur), assistant de
+  création de tournoi en 4 étapes, console organisateur, projection plein écran,
+  spectateur public, statistiques, compte.
+- PWA (manifest, service worker, icônes), i18n français + anglais.
+- Client API typé, gestion CSRF, toasts, états de chargement/erreur.
+- Serveur statique Node de production (`apps/web/server.mjs`) avec CSP, HSTS via
+  Caddy, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`.
+- `tsc --noEmit` vert et build Vite vert.
+
+### Seed de démonstration (`apps/api/prisma/seed.ts`)
+
+- Idempotent, activé uniquement par `SEED_DEMO=true`.
+- Crée un compte démo, une mallette à 6 valeurs, un preset 3 h, un tournoi
+  terminé, un tournoi en cours et un brouillon.
+- Identifiants de dev : `demo@pokero.local` / `PokeroDemo2026!`.
+- Désactivé en production (`SEED_DEMO=false`).
+
+### Tests E2E (`apps/web/e2e/tournament.spec.ts`)
+
+- Playwright/Chromium, scénario unique complet :
+  inscription → mallette → tournoi → joueurs → démarrage du chrono → éliminations
+  → clôture → lien spectateur valide → lien invalide → suppression de compte.
+- **1/1 scénario vert** avec API et Vite lancés par Playwright.
+
+### Déploiement
+
+- `docker-compose.prod.yml` : PostgreSQL, migration one-shot, API, web.
+- API et web liés à `127.0.0.1` uniquement ; PostgreSQL non exposé.
+- Conteneurs API/web en lecture seule, `cap_drop: ALL`,
+  `no-new-privileges`, healthchecks, logs JSON plafonnés.
+- Images : `infra/docker/api.Dockerfile`, `infra/docker/web.Dockerfile`.
+- HTTPS via le Caddy hôte existant ; `opencode.noameunier.fr` intact.
+- Migrations appliquées automatiquement avant le démarrage de l'API.
+
+## Vérifications exécutées
+
+| Commande / contrôle | Résultat |
 |---|---|
 | `pnpm --filter @pokero/domain test` | 47/47 ✅ |
 | `pnpm --filter @pokero/domain typecheck` | ✅ |
+| `pnpm --filter @pokero/contracts typecheck` | ✅ |
+| `pnpm --filter @pokero/api test` | 28/28 ✅ |
+| `pnpm --filter @pokero/api typecheck` | ✅ |
+| `pnpm --filter @pokero/web typecheck` | ✅ |
+| `pnpm --filter @pokero/web build` | ✅ |
+| `pnpm --filter @pokero/web test:e2e` | 1/1 ✅ |
+| Smoke test HTTPS production (compte, mallette, tournoi, chrono, CSRF, idempotence, conflit de version, spectateur, révocation, suppression) | ✅ |
+| Redémarrage `docker compose restart api web` | API healthy en 2 s, session et données persistées ✅ |
+| `./infra/docker/backup.sh` + restauration dans une base temporaire | Archive valide, 3 tables contrôlées ✅ |
+| `https://pokero.noameunier.fr/` | 200 ✅ |
+| `https://pokero.noameunier.fr/api/auth/me` | 200 ✅ |
+| `https://opencode.noameunier.fr/` | 200 ✅ |
+
+## Avertissements connus (non bloquants)
+
+- `pg` signale un `client.query()` concurrent (avertissement de dépréciation
+  provenant de la pile Prisma/adaptateur) ; aucune erreur fonctionnelle observée.
+- Bundle web principal ≈ 560 kB : découpage de code à prévoir.
+- Images Docker volumineuses (API ≈ 766 Mo, migrate ≈ 1,1 Go) : optimisation
+  possible en séparant les dépendances de build et de migration.
+- La vérification d'email est désactivée en production tant qu'aucun SMTP réel
+  n'est configuré.
+- La sauvegarde est manuelle ; aucun timer systemd/cron n'est encore installé.
 
 ## Prochaines étapes
 
-1. `packages/contracts` (schémas Zod partagés).
-2. API Fastify + Prisma + PostgreSQL + migrations.
-3. Auth, sessions, isolation multi-organisateurs.
-4. API tournois + Socket.IO.
-5. Interface web React.
+1. Ajouter une sauvegarde PostgreSQL planifiée et tester une restauration.
+2. Mettre en place une supervision (uptime, logs, alertes).
+3. Découper le bundle web et optimiser les images Docker.
+4. Ajouter un vrai SMTP puis activer `EMAIL_VERIFICATION_REQUIRED=true`.
+5. Démarrer la phase mobile Capacitor (Android debug puis iOS sur macOS).
+6. Compléter les tests E2E (reprise après coupure, PIN, multi-organisateurs,
+   statistiques publiques, export RGPD).
 
 ## Blocages
 
-Aucun blocage technique. Reste à faire côté humain (non bloquant) : SMTP de
-production, comptes Apple/Google, tests sur appareil réel.
+Aucun blocage technique pour la V1 web.
+
+Reste à faire côté humain (non bloquant pour la V1) : SMTP de production, comptes
+Apple/Google, machine macOS pour iOS, tests sur appareils réels.
