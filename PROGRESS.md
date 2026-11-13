@@ -168,7 +168,7 @@ revendiqués.
 
 - `pg` signale un `client.query()` concurrent (avertissement de dépréciation
   provenant de la pile Prisma/adaptateur) ; aucune erreur fonctionnelle observée.
-- Bundle web principal ≈ 655 kB minifié (≈ 187 kB gzip) : découpage de code à
+- Bundle web principal ≈ 657 kB minifié (≈ 188 kB gzip) : découpage de code à
   prévoir.
 - Images Docker volumineuses (API ≈ 766 Mo, migrate ≈ 1,1 Go) : optimisation
   possible en séparant les dépendances de build et de migration.

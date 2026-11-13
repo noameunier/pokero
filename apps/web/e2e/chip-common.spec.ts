@@ -34,6 +34,7 @@ test('la quantité commune de jetons reste cohérente et réversible', async ({ 
 
   const white = page.getByLabel('Quantité par joueur pour Blanc');
   const red = page.getByLabel('Quantité par joueur pour Rouge');
+  const whiteSpecific = await white.inputValue();
   await toggles.nth(0).check();
   await toggles.nth(1).check();
 
@@ -44,10 +45,11 @@ test('la quantité commune de jetons reste cohérente et réversible', async ({ 
   await expect(page.getByText('2 / 5 jetons suivent la quantité commune')).toBeVisible();
 
   // Décocher rend la quantité spécifique et conserve la valeur saisie.
+  // En mode manuel, les quantités automatiques sont reprises comme base.
   await toggles.nth(0).uncheck();
   await expect(white).toBeEnabled();
-  await expect(white).toHaveValue('0');
   await white.fill('7');
+  await expect(white).toHaveValue('7');
 
   await toggles.nth(0).check();
   await expect(white).toBeDisabled();

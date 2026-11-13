@@ -52,7 +52,29 @@ test('parcours organisateur complet : compte, mallette, tournoi, spectateur, sup
   await expect(page.getByText('Distribution des caves')).toBeVisible();
   await expect(page.getByText('Valeur exacte')).toBeVisible();
   await expect(page.getByText('par joueur', { exact: true }).first()).toBeVisible();
-  await expect(page.getByText(/Rebuys possibles avec ce stock/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Rebuys' })).toBeVisible();
+  await expect(page.getByText(/rebuys possibles/i).first()).toBeVisible();
+
+  // Le nombre de joueurs doit pouvoir être vidé puis réécrit.
+  const playersInput = page.locator('#players-expected');
+  await playersInput.fill('');
+  await expect(playersInput).toHaveValue('');
+  await playersInput.fill('8');
+  await expect(playersInput).toHaveValue('8');
+  await expect(page.getByText('Valeur exacte')).toBeVisible();
+
+  // Le mode automatique peut être repris pour un ajustement manuel.
+  await page.getByRole('button', { name: 'Ajuster la répartition' }).click();
+  await expect(page.getByRole('tab', { name: 'Manuel' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await page.getByRole('tab', { name: 'Automatique' }).click();
+  await expect(page.getByRole('tab', { name: 'Automatique' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(page.getByText('Valeur exacte')).toBeVisible();
   await page.getByRole('button', { name: 'Suivant' }).click();
 
   // Étape structure : premier niveau distinct, prévisualisation générée côté client.
@@ -156,6 +178,13 @@ test('parcours organisateur complet : compte, mallette, tournoi, spectateur, sup
   ).toBeVisible();
   await invalid.close();
   await spectator.close();
+
+  // --- Suppression du tournoi depuis le tableau de bord -----------------
+  await page.goto('/');
+  await page.getByRole('button', { name: `Supprimer ${tournamentName}` }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Supprimer' }).click();
+  await expect(page.getByText('Tournoi supprimé.')).toBeVisible();
+  await expect(page.getByText(tournamentName)).toHaveCount(0);
 
   // --- Suppression du compte (RGPD) ------------------------------------
   await page.goto('/compte');

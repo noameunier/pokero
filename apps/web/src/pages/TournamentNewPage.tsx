@@ -471,6 +471,33 @@ export function TournamentNewPage() {
   const toggleCommon = (chipTypeId: string, enabled: boolean) =>
     setCommonEnabled((current) => ({ ...current, [chipTypeId]: enabled }));
 
+  const copyAutoCounts = (): boolean => {
+    if (!plan) return false;
+    setManualCounts(
+      Object.fromEntries(plan.counts.map((count) => [count.chipTypeId, count.perPlayer])),
+    );
+    setCommonEnabled({});
+    setCommonCount(0);
+    return true;
+  };
+
+  const changeMode = (nextMode: 'AUTO' | 'MANUAL') => {
+    if (nextMode === 'MANUAL' && mode === 'AUTO' && plan && Object.keys(manualCounts).length === 0) {
+      copyAutoCounts();
+    }
+    setMode(nextMode);
+  };
+
+  const adjustFromAuto = () => {
+    if (!copyAutoCounts()) return;
+    setMode('MANUAL');
+    window.setTimeout(() => {
+      document
+        .getElementById('manual-cave-editor')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 60);
+  };
+
   const previewLevels = autoGenerate ? (generatedLevels?.levels ?? []) : manualLevels;
 
   return (
@@ -607,84 +634,6 @@ export function TournamentNewPage() {
 
           <Card className="p-4 sm:p-5">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="font-display text-xl text-cream-50">Rebuys</h2>
-              <Badge tone={rebuyEnabled ? 'success' : 'neutral'}>
-                {rebuyEnabled ? 'Activés' : 'Désactivés'}
-              </Badge>
-            </div>
-            <p className="mt-1 text-[11.5px] leading-relaxed text-cream-400">
-              Capacité estimée avec le stock de la mallette, une cave de{' '}
-              {formatChips(targetBuyIn)} et {players} joueurs. Elle se met à jour à l’étape
-              Caves.
-            </p>
-            <div className="mt-3 rounded-[var(--radius-sm)] border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
-              {plan ? (
-                rebuyCapacity !== null && rebuyCapacity > 0 ? (
-                  <p className="text-[12.5px] leading-relaxed text-cream-300">
-                    Environ{' '}
-                    <strong className="tabular text-cream-50">
-                      {formatChips(rebuyCapacity)}
-                    </strong>{' '}
-                    rebuys possibles, soit{' '}
-                    <strong className="tabular text-cream-50">
-                      {formatChips(rebuysPerPlayer)}
-                    </strong>{' '}
-                    par joueur.
-                  </p>
-                ) : (
-                  <p className="text-[12.5px] leading-relaxed text-warning-300">
-                    Le stock restant ne permet pas de rebuy supplémentaire après les caves.
-                  </p>
-                )
-              ) : (
-                <p className="text-[12.5px] leading-relaxed text-cream-400">
-                  Sélectionnez une mallette pour estimer la capacité.
-                </p>
-              )}
-            </div>
-            <div className="mt-4">
-              <Switch
-                label="Rebuys activés"
-                hint="Recave un joueur éliminé tant que la limite n’est pas atteinte."
-                checked={rebuyEnabled}
-                onChange={setRebuyEnabled}
-              />
-            </div>
-            {rebuyEnabled ? (
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <Field label="Jusqu’au niveau">
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
-                    value={rebuyUntilLevel}
-                    onChange={(event) => setRebuyUntilLevel(event.target.value)}
-                  />
-                </Field>
-                <Field label="Max par joueur" hint="Vide = illimité">
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    value={rebuyMax}
-                    placeholder={String(rebuysPerPlayer)}
-                    onChange={(event) => {
-                      setRebuyMax(event.target.value);
-                      setRebuyUnlimited(event.target.value === '');
-                    }}
-                  />
-                </Field>
-              </div>
-            ) : null}
-            {rebuyLimitExceedsCapacity ? (
-              <p className="mt-2 text-[11.5px] leading-relaxed text-warning-300">
-                La limite de {rebuyMax} rebuy(s) par joueur dépasse la capacité estimée du stock.
-              </p>
-            ) : null}
-          </Card>
-
-          <Card className="p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-2">
               <h2 className="font-display text-xl text-cream-50">Résumé de la mallette</h2>
               {selectedChipCase ? (
                 <Badge tone="neutral">{selectedChipCase.chipTypes.length} valeurs</Badge>
@@ -741,8 +690,11 @@ export function TournamentNewPage() {
                   inputMode="numeric"
                   min={2}
                   max={200}
-                  value={players}
-                  onChange={(event) => setPlayers(Number(event.target.value) || 2)}
+                  value={players || ''}
+                  onChange={(event) => {
+                    const parsed = Number.parseInt(event.target.value, 10);
+                    setPlayers(Number.isFinite(parsed) && parsed > 0 ? parsed : 0);
+                  }}
                 />
               </Field>
               <Field label={t('tournament.buyIn')} htmlFor="target-buy-in">
@@ -793,7 +745,7 @@ export function TournamentNewPage() {
                   type="button"
                   role="tab"
                   aria-selected={mode === option}
-                  onClick={() => setMode(option)}
+                  onClick={() => changeMode(option)}
                   className={`min-h-10 flex-1 rounded-[var(--radius-sm)] px-3 text-[13px] font-semibold transition-colors ${
                     mode === option
                       ? 'bg-gold-500 text-night-950'
@@ -806,7 +758,7 @@ export function TournamentNewPage() {
             </div>
 
             {mode === 'MANUAL' && selectedChipCase ? (
-              <div className="mt-4">
+              <div className="mt-4" id="manual-cave-editor">
                 <ChipCountEditor
                   chipTypes={manualChipTypes}
                   counts={manualCounts}
@@ -904,14 +856,22 @@ export function TournamentNewPage() {
                   <SummaryTile label="Total" value={formatChips(plan.totalValue)} hint="en jeu" />
                 </div>
 
-                {rebuyEnabled && rebuyCapacity !== null ? (
-                  <p className="rounded-[var(--radius-sm)] border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-[11.5px] leading-relaxed text-cream-400">
-                    Rebuys possibles avec ce stock :{' '}
-                    <strong className="tabular text-cream-100">
-                      {formatChips(rebuyCapacity)}
-                    </strong>{' '}
-                    ({formatChips(rebuysPerPlayer)} par joueur).
-                  </p>
+                {mode === 'AUTO' ? (
+                  <div className="flex flex-col items-start gap-2 rounded-[var(--radius-sm)] border border-gold-500/20 bg-gold-500/[0.05] px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="min-w-0 text-[11px] leading-relaxed text-cream-400 sm:flex-1">
+                      Vous pouvez ajuster cette proposition. Le mode manuel reprend les quantités
+                      automatiques et recalcule le total.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                      onClick={adjustFromAuto}
+                    >
+                      Ajuster la répartition
+                    </Button>
+                  </div>
                 ) : null}
 
                 {plan.warnings.length > 0 ? (
@@ -927,6 +887,84 @@ export function TournamentNewPage() {
               </div>
             ) : null}
           </Card>
+
+          <Card className="p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-display text-xl text-cream-50">Rebuys</h2>
+              <Badge tone={rebuyEnabled ? 'success' : 'neutral'}>
+                {rebuyEnabled ? 'Activés' : 'Désactivés'}
+              </Badge>
+            </div>
+            <p className="mt-1 text-[11.5px] leading-relaxed text-cream-400">
+              Capacité estimée avec le stock de la mallette, une cave de{' '}
+              {formatChips(targetBuyIn)} et {players} joueurs.
+            </p>
+            <div className="mt-3 rounded-[var(--radius-sm)] border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
+              {plan ? (
+                rebuyCapacity !== null && rebuyCapacity > 0 ? (
+                  <p className="text-[12.5px] leading-relaxed text-cream-300">
+                    Environ{' '}
+                    <strong className="tabular text-cream-50">
+                      {formatChips(rebuyCapacity)}
+                    </strong>{' '}
+                    rebuys possibles, soit{' '}
+                    <strong className="tabular text-cream-50">
+                      {formatChips(rebuysPerPlayer)}
+                    </strong>{' '}
+                    par joueur.
+                  </p>
+                ) : (
+                  <p className="text-[12.5px] leading-relaxed text-warning-300">
+                    Le stock restant ne permet pas de rebuy supplémentaire après les caves.
+                  </p>
+                )
+              ) : (
+                <p className="text-[12.5px] leading-relaxed text-cream-400">
+                  Sélectionnez une mallette pour estimer la capacité.
+                </p>
+              )}
+            </div>
+            <div className="mt-4">
+              <Switch
+                label="Rebuys activés"
+                hint="Recave un joueur éliminé tant que la limite n’est pas atteinte."
+                checked={rebuyEnabled}
+                onChange={setRebuyEnabled}
+              />
+            </div>
+            {rebuyEnabled ? (
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <Field label="Jusqu’au niveau">
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    value={rebuyUntilLevel}
+                    onChange={(event) => setRebuyUntilLevel(event.target.value)}
+                  />
+                </Field>
+                <Field label="Max par joueur" hint="Vide = illimité">
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={rebuyMax}
+                    placeholder={String(rebuysPerPlayer)}
+                    onChange={(event) => {
+                      setRebuyMax(event.target.value);
+                      setRebuyUnlimited(event.target.value === '');
+                    }}
+                  />
+                </Field>
+              </div>
+            ) : null}
+            {rebuyLimitExceedsCapacity ? (
+              <p className="mt-2 text-[11.5px] leading-relaxed text-warning-300">
+                La limite de {rebuyMax} rebuy(s) par joueur dépasse la capacité estimée du stock.
+              </p>
+            ) : null}
+          </Card>
+
         </div>
       ) : null}
 

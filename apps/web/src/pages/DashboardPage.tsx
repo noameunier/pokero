@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -12,6 +13,7 @@ import {
   ListOrdered,
   Plus,
   Spade,
+  Trash2,
   Trophy,
   Users,
   WalletCards,
@@ -27,8 +29,17 @@ import {
   useStatusLabel,
 } from '../lib/format';
 import type { ChipCase, ClockView, MyStats, Preset, TournamentSummary } from '../lib/types';
-import { Badge, EmptyState, ErrorState, SectionHeading, Spinner, Stat } from '../components/ui';
+import {
+  Badge,
+  ConfirmDialog,
+  EmptyState,
+  ErrorState,
+  SectionHeading,
+  Spinner,
+  Stat,
+} from '../components/ui';
 import { ClockProgress, useServerSyncedRemaining } from '../components/Clock';
+import { useToast } from '../components/Toast';
 
 function LiveCard({ tournament }: { tournament: TournamentSummary }) {
   const { t } = useTranslation();
@@ -139,41 +150,85 @@ function LiveCard({ tournament }: { tournament: TournamentSummary }) {
   );
 }
 
+function DeleteTournamentButton({ tournament }: { tournament: TournamentSummary }) {
+  const queryClient = useQueryClient();
+  const { success, error: notifyError } = useToast();
+  const errorMessage = useApiErrorMessage();
+  const [open, setOpen] = useState(false);
+  const mutation = useMutation({
+    mutationFn: () => api.delete(`/api/tournaments/${tournament.id}`),
+    onSuccess: () => {
+      setOpen(false);
+      void queryClient.invalidateQueries({ queryKey: ['tournaments'] });
+      success('Tournoi supprimé.');
+    },
+    onError: (caught) => notifyError(errorMessage(caught)),
+  });
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={`Supprimer ${tournament.name}`}
+        title="Supprimer le tournoi"
+        className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-sm)] text-cream-500 transition-colors hover:bg-danger-500/10 hover:text-danger-300 sm:size-9"
+      >
+        <Trash2 className="size-4" aria-hidden />
+      </button>
+      <ConfirmDialog
+        open={open}
+        title="Supprimer définitivement ce tournoi ?"
+        description="Le tournoi, ses participants et son historique seront supprimés. Cette action est irréversible."
+        confirmLabel="Supprimer"
+        loading={mutation.isPending}
+        onClose={() => setOpen(false)}
+        onConfirm={() => mutation.mutate()}
+      />
+    </>
+  );
+}
+
 function TournamentRow({ tournament }: { tournament: TournamentSummary }) {
   const { t } = useTranslation();
   const statusLabel = useStatusLabel();
   const isLive = tournament.status === 'RUNNING' || tournament.status === 'PAUSED';
+  const canDelete = ['DRAFT', 'COMPLETED', 'CANCELLED'].includes(tournament.status);
+
   return (
-    <Link
-      to={`/tournois/${tournament.id}`}
-      className="group flex min-h-[62px] items-center gap-3 rounded-[var(--radius-md)] border border-transparent px-3 py-2.5 transition-colors hover:border-white/[0.07] hover:bg-white/[0.025]"
-    >
-      <span
-        className={`grid size-9 shrink-0 place-items-center rounded-full border ${
-          isLive
-            ? 'border-gold-500/25 bg-gold-500/[0.09] text-gold-400'
-            : 'border-white/[0.07] bg-white/[0.025] text-cream-400'
-        }`}
+    <div className="group flex min-h-[62px] items-center gap-3 rounded-[var(--radius-md)] border border-transparent px-3 py-2.5 transition-colors hover:border-white/[0.07] hover:bg-white/[0.025]">
+      <Link
+        to={`/tournois/${tournament.id}`}
+        className="flex min-w-0 flex-1 items-center gap-3"
       >
-        <Trophy className="size-4" aria-hidden />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold text-cream-100">
-          {tournament.name}
+        <span
+          className={`grid size-9 shrink-0 place-items-center rounded-full border ${
+            isLive
+              ? 'border-gold-500/25 bg-gold-500/[0.09] text-gold-400'
+              : 'border-white/[0.07] bg-white/[0.025] text-cream-400'
+          }`}
+        >
+          <Trophy className="size-4" aria-hidden />
         </span>
-        <span className="mt-0.5 block truncate text-[11.5px] text-cream-400">
-          {t('dashboard.playersCount', { count: tournament.participantsCount })} ·{' '}
-          {formatDateShort(tournament.startedAt ?? tournament.createdAt)}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold text-cream-100">
+            {tournament.name}
+          </span>
+          <span className="mt-0.5 block truncate text-[11.5px] text-cream-400">
+            {t('dashboard.playersCount', { count: tournament.participantsCount })} ·{' '}
+            {formatDateShort(tournament.startedAt ?? tournament.createdAt)}
+          </span>
         </span>
-      </span>
-      <span className={`badge hidden sm:inline-flex ${statusTone(tournament.status)}`}>
-        {statusLabel(tournament.status)}
-      </span>
-      <ChevronRight
-        className="size-4 shrink-0 text-cream-500 transition-transform group-hover:translate-x-0.5 group-hover:text-cream-300"
-        aria-hidden
-      />
-    </Link>
+        <span className={`badge hidden sm:inline-flex ${statusTone(tournament.status)}`}>
+          {statusLabel(tournament.status)}
+        </span>
+        <ChevronRight
+          className="size-4 shrink-0 text-cream-500 transition-transform group-hover:translate-x-0.5 group-hover:text-cream-300"
+          aria-hidden
+        />
+      </Link>
+      {canDelete ? <DeleteTournamentButton tournament={tournament} /> : null}
+    </div>
   );
 }
 
