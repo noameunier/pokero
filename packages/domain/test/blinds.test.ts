@@ -74,6 +74,20 @@ describe('génération des blindes', () => {
     expect(playLevels[4]!.ante).toBeGreaterThan(0);
   });
 
+  it('désactive les antes quand la valeur est zéro', () => {
+    const withoutAnte = generateBlindStructure({
+      startingStack: 10_000,
+      targetDurationMinutes: 60,
+      levelDurationMinutes: 20,
+      anteFromLevel: 0,
+    });
+    expect(
+      withoutAnte.levels
+        .filter((level) => level.kind === 'PLAY')
+        .every((level) => level.ante === null),
+    ).toBe(true);
+  });
+
   it('calcule la profondeur de départ', () => {
     expect(structure.startingDepth).toBe(100);
   });

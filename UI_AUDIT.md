@@ -162,7 +162,7 @@ Correction : passage à des **tokens pleins**. Il reste aujourd’hui **0** coul
 | États vide/chargement/erreur | Capturés et vérifiés |
 | Typecheck web | ✅ |
 | Build Vite | ✅ (`index.js` ≈ 657 kB minifié, ≈ 188 kB gzip) |
-| Tests unitaires | 48 domaine + 31 API ✅ |
+| Tests unitaires | 49 domaine + 31 API ✅ |
 | E2E | 5/5 ✅ |
 | Production HTTPS (thème, polices, console) | ✅ |
 

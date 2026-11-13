@@ -116,7 +116,7 @@ export const blindConfigSchema = z.object({
   startingSmallBlind: positiveIntSchema.optional(),
   startingBigBlind: positiveIntSchema.optional(),
   roundUnit: positiveIntSchema.default(25),
-  anteFromLevel: z.number().int().min(1).max(100).default(5),
+  anteFromLevel: z.number().int().min(0).max(100).default(5),
   antePercentOfBigBlind: z.number().min(0).max(1).default(0.125),
   growthFactor: z.number().min(1).max(2).optional(),
   levels: z.array(blindLevelInputSchema).max(100).optional(),

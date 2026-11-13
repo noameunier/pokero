@@ -89,7 +89,7 @@ export function generateBlindStructure(request: BlindsRequest): BlindStructure {
   const breakMinutes = request.breakDurationMinutes ?? DEFAULT_BREAK_MINUTES;
   const breakEvery = Math.max(0, request.breakEveryLevels ?? DEFAULT_BREAK_EVERY);
   const roundUnit = Math.max(1, request.roundUnit ?? 1);
-  const anteFromLevel = Math.max(1, request.anteFromLevel ?? DEFAULT_ANTE_FROM);
+  const anteFromLevel = Math.max(0, request.anteFromLevel ?? DEFAULT_ANTE_FROM);
   const antePercent = request.antePercentOfBigBlind ?? DEFAULT_ANTE_PERCENT;
   const maxLevels = Math.max(1, request.maxLevels ?? DEFAULT_MAX_LEVELS);
 
@@ -135,7 +135,7 @@ export function generateBlindStructure(request: BlindsRequest): BlindStructure {
     }
     const bigBlind = smallBlind * 2;
     const ante =
-      index + 1 >= anteFromLevel
+      anteFromLevel > 0 && index + 1 >= anteFromLevel
         ? Math.max(roundUnit, roundTo(bigBlind * antePercent, roundUnit))
         : 0;
 

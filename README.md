@@ -83,7 +83,7 @@ Variables principales de `apps/api/.env` :
 ## Tests
 
 ```bash
-pnpm --filter @pokero/domain test       # 48 tests unitaires
+pnpm --filter @pokero/domain test       # 49 tests unitaires
 pnpm --filter @pokero/api test          # 31 tests d'intégration (base pokero_test)
 pnpm --filter @pokero/web test:e2e      # 5 scénarios Playwright
 pnpm typecheck                          # tous les paquets

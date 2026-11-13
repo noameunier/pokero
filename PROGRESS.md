@@ -13,7 +13,7 @@ statistiques et suppression de compte RGPD.
 
 La refonte UI/UX est terminée, fusionnée sur `main` et **déployée en
 production** le 25 octobre 2026. Elle a été validée en local (typecheck, build,
-79 tests unitaires/intégration, 5 scénarios E2E, captures avant/après) puis
+80 tests unitaires/intégration, 5 scénarios E2E, captures avant/après) puis
 vérifiée en HTTPS (santé, thème, polices, absence d'erreur console).
 
 L'application mobile Capacitor reste à faire (phase P9). Aucun test sur appareil
@@ -51,7 +51,7 @@ revendiqués.
   manuelles et programmées, ajout/retrait de temps, trois modes de récupération,
   structure épuisée sans vainqueur automatique.
 - Classement final et statistiques joueur multi-organisateurs.
-- **48 tests unitaires verts**, `tsc --noEmit` vert.
+- **49 tests unitaires verts**, `tsc --noEmit` vert.
 
 ### Contrats (`packages/contracts`)
 
@@ -145,7 +145,7 @@ revendiqués.
 
 | Commande / contrôle | Résultat |
 |---|---|
-| `pnpm --filter @pokero/domain test` | 48/48 ✅ |
+| `pnpm --filter @pokero/domain test` | 49/49 ✅ |
 | `pnpm --filter @pokero/domain typecheck` | ✅ |
 | `pnpm --filter @pokero/contracts typecheck` | ✅ |
 | `pnpm --filter @pokero/api test` | 31/31 ✅ |

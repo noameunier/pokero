@@ -572,16 +572,20 @@ export function PresetEditorPage() {
                     }
                   />
                 </Field>
-                <Field label="Ante à partir du niveau" htmlFor="preset-ante-level">
+                <Field
+                  label="Ante à partir du niveau"
+                  hint="0 = aucun ante"
+                  htmlFor="preset-ante-level"
+                >
                   <Input
                     id="preset-ante-level"
                     type="number"
                     inputMode="numeric"
-                    min={1}
+                    min={0}
                     max={100}
                     value={config.blinds.anteFromLevel}
                     onChange={(event) =>
-                      patchBlinds({ anteFromLevel: Number(event.target.value) || 1 })
+                      patchBlinds({ anteFromLevel: Number(event.target.value) || 0 })
                     }
                   />
                 </Field>

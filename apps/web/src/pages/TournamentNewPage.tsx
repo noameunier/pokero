@@ -1095,15 +1095,15 @@ export function TournamentNewPage() {
                     }}
                   />
                 </Field>
-                <Field label="Ante dès le niveau" htmlFor="ante-from-level">
+                <Field label="Ante dès le niveau" hint="0 = aucun ante" htmlFor="ante-from-level">
                   <Input
                     id="ante-from-level"
                     type="number"
                     inputMode="numeric"
-                    min={1}
+                    min={0}
                     max={100}
                     value={anteFromLevel}
-                    onChange={(event) => setAnteFromLevel(Number(event.target.value) || 1)}
+                    onChange={(event) => setAnteFromLevel(Number(event.target.value) || 0)}
                   />
                 </Field>
                 <Field label="SB de départ" hint="Vide = 100 BB de profondeur" htmlFor="starting-sb">

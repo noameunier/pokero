@@ -33,7 +33,7 @@ Commande : `pnpm test`
 | Paquet | Fichiers | Tests | Résultat |
 |---|---|---|---|
 | `packages/contracts` | 0 | 0 | ✅ (aucun test défini) |
-| `packages/domain` | 4 | 48 | ✅ 48/48 |
+| `packages/domain` | 4 | 49 | ✅ 49/49 |
 | `apps/api` | 2 | 31 | ✅ 31/31 |
 | `apps/web` | 0 | 0 | ✅ (couverture par Playwright) |
 
@@ -71,11 +71,11 @@ Commande :
 E2E_BASE_URL=http://127.0.0.1:5173 pnpm test:e2e
 ```
 
-Résultat : **5/5 scénarios verts** (66,0 s au total, dernier passage).
+Résultat : **5/5 scénarios verts** (67,0 s au total, dernier passage).
 
 | Scénario | Fichier | Durée | Couverture |
 |---|---|---|---|
-| Parcours organisateur complet | `e2e/tournament.spec.ts` | 30,3 s | Inscription, mallettes, tournoi avec PIN et déverrouillage, premier niveau distinct, unité d’arrondi issue des jetons, capacité de rebuy, suivi local du tapis d’un joueur, nombre de joueurs vidable, ajustement depuis l’automatique, jetons communs, joueurs, chrono, éliminations avec confirmation, clôture, classement, lien spectateur, lien invalide, suppression depuis le tableau de bord, suppression RGPD |
+| Parcours organisateur complet | `e2e/tournament.spec.ts` | 31,3 s | Inscription, mallettes, tournoi avec PIN et déverrouillage, premier niveau distinct, unité d’arrondi issue des jetons, capacité de rebuy, suivi local du tapis d’un joueur, nombre de joueurs vidable, ajustement depuis l’automatique, jetons communs, joueurs, chrono, éliminations avec confirmation, clôture, classement, lien spectateur, lien invalide, suppression depuis le tableau de bord, suppression RGPD |
 | Saisie mobile | `e2e/mobile-layout.spec.ts` | 5,9 s | Valeurs et quantités lisibles, pas de débordement, suppression de compte |
 | Quantité commune de jetons | `e2e/chip-common.spec.ts` | 11,6 s | Case globale, cases par jeton, valeur commune, retour aux valeurs spécifiques, alerte de stock |
 | Aperçu local de cave | `e2e/chip-case-preview.spec.ts` | 7,3 s | Aperçu calculé avec les valeurs non enregistrées, avertissement d’obsolescence, enregistrement depuis le bas de page, suppression |
