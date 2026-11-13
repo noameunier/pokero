@@ -36,7 +36,7 @@ export function Brand({ compact = false }: { compact?: boolean }) {
 }
 
 const desktopNav = [
-  { to: '/', key: 'nav.dashboard', icon: Trophy, end: true },
+  { to: '/', key: 'nav.home', icon: Trophy, end: true },
   { to: '/mallettes', key: 'nav.chipCases', icon: Layers3 },
   { to: '/presets', key: 'nav.presets', icon: WalletCards },
   { to: '/statistiques', key: 'nav.stats', icon: BarChart3 },
@@ -60,6 +60,7 @@ export function AppShell() {
     typeof navigator === 'undefined' ? true : navigator.onLine,
   );
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -84,7 +85,10 @@ export function AppShell() {
       }
     };
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMenuOpen(false);
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+        menuButtonRef.current?.focus();
+      }
     };
     document.addEventListener('pointerdown', onPointer);
     document.addEventListener('keydown', onKey);
@@ -109,14 +113,14 @@ export function AppShell() {
         href="#contenu"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-gold-500 focus:px-4 focus:py-2 focus:text-night-950"
       >
-        Aller au contenu
+        {t('nav.skipContent')}
       </a>
 
       <header className="sticky top-0 z-30 border-b border-white/[0.07] bg-night-950/92 backdrop-blur-xl">
-        <div className="mx-auto flex h-[62px] w-full max-w-[1200px] items-center gap-3 px-4 sm:px-6 lg:h-[72px] lg:gap-6 lg:px-8">
+        <div className="mx-auto flex h-[62px] w-full max-w-[1200px] items-center gap-3 px-4 sm:px-6 lg:h-[72px] lg:gap-4 lg:px-8">
           <Brand />
 
-          <nav className="ml-4 hidden items-center gap-1 md:flex" aria-label="Navigation principale">
+          <nav className="hidden items-center gap-1 lg:flex xl:ml-4" aria-label={t('nav.primary')}>
             {desktopNav.map((item) => (
               <NavLink
                 key={item.to}
@@ -132,32 +136,47 @@ export function AppShell() {
 
           <div className="ml-auto flex items-center gap-2">
             {!online ? (
-              <span className="hidden items-center gap-1.5 rounded-full border border-warning-500/30 bg-warning-500/10 px-2.5 py-1 text-[11px] font-semibold text-warning-300 sm:inline-flex">
+              <span
+                role="status"
+                className="inline-flex items-center gap-1.5 rounded-full border border-warning-500/30 bg-warning-500/10 p-2 text-[11px] font-semibold text-warning-300"
+                aria-label={t('nav.offline')}
+              >
                 <WifiOff className="size-3.5" aria-hidden />
-                Hors ligne
+                <span className="hidden xl:inline">{t('nav.offline')}</span>
               </span>
             ) : null}
-            <Link
-              to="/tournois/nouveau"
-              className="btn-primary btn-sm hidden sm:inline-flex"
+            <NavLink
+              to="/presets"
+              aria-label={t('nav.presets')}
+              title={t('nav.presets')}
+              className={({ isActive }) =>
+                `btn-ghost min-w-11 gap-1.5 px-2 lg:hidden ${isActive ? 'bg-gold-500/10 text-gold-300' : ''}`
+              }
             >
-              <Plus className="size-4" aria-hidden />
-              {t('nav.newTournament')}
-            </Link>
+              <WalletCards className="size-5" aria-hidden />
+              <span className="hidden text-xs min-[360px]:inline">{t('nav.presets')}</span>
+            </NavLink>
+            {location.pathname !== '/' && location.pathname !== '/tournois/nouveau' ? (
+              <Link to="/tournois/nouveau" className="btn-secondary btn-sm hidden lg:inline-flex">
+                <Plus className="size-4" aria-hidden />
+                {t('nav.newTournament')}
+              </Link>
+            ) : null}
 
             <div className="relative" ref={menuRef}>
               <button
+                ref={menuButtonRef}
                 type="button"
                 onClick={() => setMenuOpen((open) => !open)}
                 className="flex min-h-11 items-center gap-2 rounded-full border border-white/[0.09] bg-white/[0.035] py-1 pl-1 pr-2 text-sm transition hover:border-white/[0.16] hover:bg-white/[0.06]"
                 aria-expanded={menuOpen}
-                aria-haspopup="menu"
-                aria-label="Menu du compte"
+                aria-controls={menuOpen ? 'account-panel' : undefined}
+                aria-label={t('nav.accountMenu')}
               >
                 <span className="grid size-7 place-items-center rounded-full bg-gold-500/15 text-[11px] font-bold text-gold-300 ring-1 ring-gold-500/25">
                   {initials || 'PK'}
                 </span>
-                <span className="hidden max-w-28 truncate font-semibold text-cream-200 sm:block">
+                <span className="hidden max-w-28 truncate font-semibold text-cream-200 xl:block">
                   {user.displayName}
                 </span>
                 <ChevronDown
@@ -168,7 +187,7 @@ export function AppShell() {
 
               {menuOpen ? (
                 <div
-                  role="menu"
+                  id="account-panel"
                   className="absolute right-0 top-[calc(100%+0.5rem)] z-40 w-60 overflow-hidden rounded-[var(--radius-md)] border border-white/[0.09] bg-night-800 shadow-lifted animate-rise"
                 >
                   <div className="border-b border-white/[0.07] px-3.5 py-3">
@@ -180,20 +199,18 @@ export function AppShell() {
                   <div className="p-1.5">
                     <Link
                       to="/compte"
-                      role="menuitem"
-                      className="flex min-h-10 items-center gap-2.5 rounded-[var(--radius-sm)] px-3 text-sm text-cream-200 hover:bg-white/[0.06]"
+                      className="flex min-h-11 items-center gap-2.5 rounded-[var(--radius-sm)] px-3 text-sm text-cream-200 hover:bg-white/[0.06]"
                     >
                       <Settings className="size-4 text-cream-400" aria-hidden />
                       {t('nav.account')}
                     </Link>
                     <button
                       type="button"
-                      role="menuitem"
                       onClick={() => {
                         setMenuOpen(false);
                         void logout().then(() => success(t('auth.logoutDone')));
                       }}
-                      className="flex min-h-10 w-full items-center gap-2.5 rounded-[var(--radius-sm)] px-3 text-left text-sm text-danger-300 hover:bg-danger-500/10"
+                      className="flex min-h-11 w-full items-center gap-2.5 rounded-[var(--radius-sm)] px-3 text-left text-sm text-danger-300 hover:bg-danger-500/10"
                     >
                       <LogOut className="size-4" aria-hidden />
                       {t('nav.logout')}
@@ -208,12 +225,13 @@ export function AppShell() {
 
       <main
         id="contenu"
-        className="mx-auto w-full max-w-[1200px] flex-1 px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-6 sm:px-6 sm:pt-8 md:pb-14 lg:px-8"
+        tabIndex={-1}
+        className="mx-auto w-full max-w-[1200px] flex-1 px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pb-14"
       >
         <Outlet />
       </main>
 
-      <footer className="hidden border-t border-white/[0.05] px-6 py-5 md:block">
+      <footer className="hidden border-t border-white/[0.05] px-6 py-5 lg:block">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between text-[11px] text-cream-500">
           <span>Pokero · gestion de tournois de poker</span>
           <span className="inline-flex items-center gap-1.5">
@@ -224,8 +242,8 @@ export function AppShell() {
       </footer>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.08] bg-night-950/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
-        aria-label="Navigation mobile"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.08] bg-night-950/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
+        aria-label={t('nav.mobile')}
       >
         <div className="mx-auto flex max-w-lg items-stretch justify-around px-1">
           {mobileNav.map((item) => (
@@ -235,8 +253,8 @@ export function AppShell() {
               end={item.end}
               className={({ isActive }) =>
                 item.accent
-                  ? 'relative flex flex-1 flex-col items-center justify-end gap-0.5 px-0.5 pb-2 text-[9.5px] font-semibold text-gold-400'
-                  : `relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 py-2 text-[9.5px] font-semibold transition-colors ${
+                  ? 'relative flex flex-1 flex-col items-center justify-end gap-0.5 px-0.5 pb-2 text-[10.5px] font-semibold text-gold-400'
+                  : `relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 py-2 text-[10.5px] font-semibold transition-colors ${
                       isActive ? 'text-gold-400' : 'text-cream-400'
                     }`
               }

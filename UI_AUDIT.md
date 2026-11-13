@@ -202,3 +202,27 @@ de développement Vite et aux tests E2E.
   `desktop/`, plus `states/` (vide, chargement, erreur desktop et mobile) et
   `iphone/dashboard-offline.png`.
 - Index et commandes de régénération : `docs/ui/README.md`.
+
+## 9. Itération du 13 novembre 2026
+
+Une revue complémentaire, sur `ui/experience-refresh`, conserve la direction
+artistique et améliore la hiérarchie de l’accueil ainsi que la navigation partagée.
+Elle ne remplace pas l’audit historique ci-dessus et ne prétend pas revalider
+tous ses résultats.
+
+- Actions répétées remplacées par une priorité contextualisée : console live ou création.
+- Tournois regroupés dans une collection recherchable et filtrable, avec accès
+  aux résultats au-delà des six premières lignes.
+- Préparation de soirée regroupée : mallettes actives et lancement depuis un preset.
+- Statuts affichés sur petit écran, squelettes de chargement et erreurs secondaires
+  explicites plutôt que faux zéros ou fausses listes vides.
+- Navigation desktop réservée à 1024 px et plus ; accès aux presets sur mobile/tablette.
+- Panneau de compte utilisable avec Tab et Échap, restitution du focus au déclencheur.
+
+Les 20 scénarios Playwright dédiés (dont génération de captures), le build web et
+les 48 tests du domaine passent. Le responsive de l’accueil est contrôlé à 320,
+390, 768, 834, 1024 et 1440 px ; la navigation des mallettes, presets, statistiques
+et compte est également contrôlée à 834 et 1024 px.
+
+Analyse détaillée, limites, pistes suivantes et captures reproductibles :
+[`docs/ui/refresh/README.md`](docs/ui/refresh/README.md).

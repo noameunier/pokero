@@ -155,8 +155,8 @@ taille fluide (`clamp`) selon le contexte : `sm`, `md`, `lg`, `xl`.
 | Préfixe | Largeur | Usage |
 |---|---|---|
 | `sm` | 640 px | Boutons secondaires visibles, titres agrandis |
-| `md` | 768 px | Navigation desktop, disparition de la barre basse |
-| `lg` | 1024 px | En-tête 72 px, grilles à deux colonnes |
+| `md` | 768 px | Grilles de contenu intermédiaires |
+| `lg` | 1024 px | Navigation desktop, disparition de la barre basse, en-tête 72 px, grilles à deux colonnes |
 | `xl` | 1280 px | Console tournoi : colonne principale + colonne latérale |
 
 ## 5. Rayons
@@ -234,16 +234,43 @@ lisible en majuscules. Le point optionnel ne remplace jamais le texte.
 
 ### Navigation (`AppShell`)
 
-- **Desktop (`md+`)** : en-tête collant, logo, liens principaux, bouton
-  « Nouveau tournoi », menu de compte.
-- **Mobile (`< md`)** : barre basse fixe à 5 entrées :
+- **Desktop (`lg+`)** : en-tête collant, logo, liens principaux, bouton secondaire
+  « Nouveau tournoi », menu de compte. Le raccourci de création n’est pas répété
+  dans l’en-tête sur l’accueil ni dans l’assistant de création.
+- **Mobile et tablette (`< lg`)** : barre basse fixe à 5 entrées :
   Accueil, Mallettes, **Créer** (action surélevée or), Statistiques, Compte.
   Libellés courts pour éviter la troncature.
+- Un raccourci Presets, nommé pour les technologies d’assistance, reste accessible
+  dans l’en-tête mobile/tablette, quelle que soit la page courante.
 - Lien actif : texte `cream-50`, fond translucide et filet or (desktop) ;
   icône et texte or (mobile).
-- Menu de compte : nom, email, compte, déconnexion.
+- Menu de compte : nom, email, compte, déconnexion. Il suit le modèle disclosure
+  (`aria-expanded`, `aria-controls`), avec navigation Tab native ; Échap ferme le
+  panneau et rend le focus au déclencheur.
 - Lien d’évitement « Aller au contenu » au focus clavier.
 - Indicateur « Hors ligne » dans l’en-tête.
+
+### Accueil organisateur
+
+- À partir de `lg` : colonne principale flexible (`minmax(0, 1fr)`) et colonne de
+  préparation de 320 px. En dessous : empilement, tournoi en cours en premier.
+- L’or privilégie « Ouvrir la console » pendant une partie ; « Nouveau tournoi »
+  devient secondaire. Sans partie en cours, la création redevient dominante.
+- La collection propose recherche, filtres et chargement de lignes supplémentaires
+  côté client : aucun tournoi reçu de l’API n’est inaccessible après les six premiers.
+- Les statuts restent visibles sur mobile, y compris brouillon, prêt et récupération.
+- Les statistiques secondaires attendent leurs données ; une erreur ne vaut jamais zéro.
+
+### Filtres, liens et retours locaux
+
+- `FilterChips` : boutons à `aria-pressed` dans un groupe nommé, compteur facultatif,
+  cibles de 44 px, retour à la ligne. Ce sont des filtres, pas des onglets ARIA.
+- `.text-link` : lien discret de section, cible de 44 px, survol or et focus commun.
+- `InlineNotice` : erreur locale non bloquante avec texte explicite et action de
+  reprise, `role="status"`. La zone principale reste utilisable.
+- `Skeleton` : forme décorative `aria-hidden`. Le conteneur de chargement porte le
+  libellé accessible ; ne pas remplacer les valeurs en attente par des zéros.
+- `SectionHeading` accepte `as="h3"` pour les sous-sections d’une section déjà titrée.
 
 ### Onglets (`Tabs`)
 
