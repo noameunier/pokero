@@ -240,6 +240,10 @@ export function PresetEditorPage() {
       setFormError('Il faut au moins deux joueurs.');
       return;
     }
+    if (!Number.isSafeInteger(config.buyIn.targetBuyIn) || config.buyIn.targetBuyIn <= 0) {
+      setFormError('Indiquez une valeur de cave entière et positive.');
+      return;
+    }
     if (config.buyIn.mode === 'MANUAL') {
       const total = selectedChipCase
         ? selectedChipCase.chipTypes.reduce(
@@ -381,10 +385,12 @@ export function PresetEditorPage() {
                   type="number"
                   inputMode="numeric"
                   min={1}
-                  step={100}
-                  value={config.buyIn.targetBuyIn}
+                  step={1}
+                  required
+                  value={config.buyIn.targetBuyIn || ''}
                   onChange={(event) => {
-                    const value = Number(event.target.value) || 1;
+                    const parsed = Number(event.target.value);
+                    const value = Number.isFinite(parsed) ? parsed : 0;
                     patchBuyIn({ targetBuyIn: value, startingStack: value });
                   }}
                 />
