@@ -180,6 +180,19 @@ export function PresetEditorPage() {
   );
   const selectedChipCase =
     chipCases.find((chipCase) => chipCase.id === config.defaultChipCaseId) ?? null;
+  const presetChipUnit = useMemo(() => {
+    const values = selectedChipCase?.chipTypes.map((type) => type.value).filter((value) => value > 0) ?? [];
+    return values.length > 0 ? Math.min(...values) : 0;
+  }, [selectedChipCase]);
+
+  useEffect(() => {
+    if (presetChipUnit <= 0) return;
+    setConfig((current) =>
+      current.blinds.roundUnit === presetChipUnit
+        ? current
+        : { ...current, blinds: { ...current.blinds, roundUnit: presetChipUnit } },
+    );
+  }, [presetChipUnit]);
 
   const saveMutation = useMutation({
     mutationFn: () => {
@@ -539,7 +552,15 @@ export function PresetEditorPage() {
                     }
                   />
                 </Field>
-                <Field label={t('tournament.roundUnit')} htmlFor="preset-round-unit">
+                <Field
+                  label={t('tournament.roundUnit')}
+                  htmlFor="preset-round-unit"
+                  hint={
+                    presetChipUnit > 0
+                      ? `Valeurs alignées sur les jetons de la mallette (${formatChips(presetChipUnit)}).`
+                      : 'Sélectionnez une mallette pour aligner les blindes sur ses jetons.'
+                  }
+                >
                   <Input
                     id="preset-round-unit"
                     type="number"
@@ -547,7 +568,7 @@ export function PresetEditorPage() {
                     min={1}
                     value={config.blinds.roundUnit}
                     onChange={(event) =>
-                      patchBlinds({ roundUnit: Number(event.target.value) || 25 })
+                      patchBlinds({ roundUnit: Number(event.target.value) || 1 })
                     }
                   />
                 </Field>

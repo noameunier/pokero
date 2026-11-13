@@ -153,6 +153,14 @@ export function TournamentNewPage() {
   }, [chipCases, chipCaseId, name, params, presetsQuery.data]);
 
   const selectedChipCase = chipCases.find((chipCase) => chipCase.id === chipCaseId) ?? null;
+  const chipBlindUnit = useMemo(() => {
+    const values = selectedChipCase?.chipTypes.map((type) => type.value).filter((value) => value > 0) ?? [];
+    return values.length > 0 ? Math.min(...values) : 0;
+  }, [selectedChipCase]);
+
+  useEffect(() => {
+    if (chipBlindUnit > 0) setRoundUnit(chipBlindUnit);
+  }, [chipCaseId, chipBlindUnit]);
 
   useEffect(() => {
     if (!presetId || appliedPreset === presetId) return;
@@ -263,6 +271,12 @@ export function TournamentNewPage() {
 
   const generatedLevels = useMemo(() => {
     if (!autoGenerate || targetBuyIn <= 0) return null;
+    const bigBlind = startingBigBlind ? Number(startingBigBlind) : undefined;
+    const smallBlind = startingSmallBlind
+      ? Number(startingSmallBlind)
+      : bigBlind
+        ? Math.max(1, Math.floor(bigBlind / 2))
+        : undefined;
     try {
       return generateBlindStructure({
         startingStack: targetBuyIn,
@@ -271,9 +285,9 @@ export function TournamentNewPage() {
         firstLevelDurationMinutes,
         breakDurationMinutes,
         breakEveryLevels,
-        roundUnit,
-        startingSmallBlind: startingSmallBlind ? Number(startingSmallBlind) : undefined,
-        startingBigBlind: startingBigBlind ? Number(startingBigBlind) : undefined,
+        roundUnit: Math.max(1, roundUnit),
+        startingSmallBlind: smallBlind,
+        startingBigBlind: bigBlind,
         anteFromLevel,
         antePercentOfBigBlind: NEW_PRESET_DEFAULTS.antePercentOfBigBlind,
       });
@@ -331,7 +345,7 @@ export function TournamentNewPage() {
               firstLevelDurationMinutes,
               breakDurationMinutes,
               breakEveryLevels,
-              roundUnit,
+              roundUnit: Math.max(1, roundUnit),
               anteFromLevel,
               antePercentOfBigBlind: NEW_PRESET_DEFAULTS.antePercentOfBigBlind,
               ...(startingSmallBlind ? { startingSmallBlind: Number(startingSmallBlind) } : {}),
@@ -344,7 +358,7 @@ export function TournamentNewPage() {
               firstLevelDurationMinutes,
               breakDurationMinutes,
               breakEveryLevels,
-              roundUnit,
+              roundUnit: Math.max(1, roundUnit),
               anteFromLevel,
               levels: manualLevels.map((level) => ({
                 kind: level.kind,
@@ -1060,17 +1074,30 @@ export function TournamentNewPage() {
                     onChange={(event) => setBreakEveryLevels(Number(event.target.value) || 0)}
                   />
                 </Field>
-                <Field label={t('tournament.roundUnit')}>
+                <Field
+                  label={t('tournament.roundUnit')}
+                  htmlFor="round-unit"
+                  hint={
+                    chipBlindUnit > 0
+                      ? `Valeurs alignées sur les jetons de la mallette (${formatChips(chipBlindUnit)}).`
+                      : 'Sélectionnez une mallette pour aligner les blindes sur ses jetons.'
+                  }
+                >
                   <Input
+                    id="round-unit"
                     type="number"
                     inputMode="numeric"
                     min={1}
-                    value={roundUnit}
-                    onChange={(event) => setRoundUnit(Number(event.target.value) || 25)}
+                    value={roundUnit || ''}
+                    onChange={(event) => {
+                      const parsed = Number.parseInt(event.target.value, 10);
+                      setRoundUnit(Number.isFinite(parsed) && parsed > 0 ? parsed : 0);
+                    }}
                   />
                 </Field>
-                <Field label="Ante dès le niveau">
+                <Field label="Ante dès le niveau" htmlFor="ante-from-level">
                   <Input
+                    id="ante-from-level"
                     type="number"
                     inputMode="numeric"
                     min={1}
@@ -1079,8 +1106,9 @@ export function TournamentNewPage() {
                     onChange={(event) => setAnteFromLevel(Number(event.target.value) || 1)}
                   />
                 </Field>
-                <Field label="SB de départ" hint="Vide = 100 BB">
+                <Field label="SB de départ" hint="Vide = 100 BB de profondeur" htmlFor="starting-sb">
                   <Input
+                    id="starting-sb"
                     type="number"
                     inputMode="numeric"
                     min={1}
@@ -1088,8 +1116,9 @@ export function TournamentNewPage() {
                     onChange={(event) => setStartingSmallBlind(event.target.value)}
                   />
                 </Field>
-                <Field label="BB de départ" hint="Vide = 2 × SB">
+                <Field label="BB de départ" hint="Vide = 2 × SB calculée" htmlFor="starting-bb">
                   <Input
+                    id="starting-bb"
                     type="number"
                     inputMode="numeric"
                     min={1}

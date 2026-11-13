@@ -79,8 +79,11 @@ test('parcours organisateur complet : compte, mallette, tournoi, spectateur, sup
 
   // Étape structure : premier niveau distinct, prévisualisation générée côté client.
   await expect(page.getByText('Aperçu de la structure')).toBeVisible();
+  await expect(page.locator('#round-unit')).toHaveValue('25');
+  await expect(page.getByText(/Valeurs alignées sur les jetons de la mallette/)).toBeVisible();
   await page.locator('#first-level-duration').fill('40');
   await expect(page.locator('table tbody tr').first().getByText('40 min')).toBeVisible();
+  await expect(page.locator('table tbody tr').first()).toContainText('50 / 100');
   await expect(page.getByText(/niveaux de jeu/)).toBeVisible();
   await page.getByRole('button', { name: 'Suivant' }).click();
 
