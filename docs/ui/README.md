@@ -2,6 +2,9 @@
 
 Captures Playwright de l’interface, avant et après la refonte.
 
+Dernière itération : [revue du 13 novembre 2026](refresh/README.md), avec captures
+comparables et scénarios de génération versionnés.
+
 ## Arborescence
 
 ```

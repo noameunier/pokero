@@ -9,8 +9,7 @@
    Les composants ne devraient pas introduire de couleur arbitraire.
 --------------------------------------------------------------------------- */
 @theme {
-  --font-sans:
-    'Manrope Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: 'Manrope Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
 
   /* Fond et surfaces : anthracite légèrement vert, opaque. */
@@ -366,6 +365,10 @@
   .nav-link-active::after {
     content: '';
     @apply absolute inset-x-3 -bottom-[1.15rem] h-0.5 rounded-full bg-gold-500;
+  }
+
+  .text-link {
+    @apply inline-flex min-h-11 items-center gap-1.5 text-xs font-semibold text-cream-300 transition-colors hover:text-gold-300;
   }
 
   /* Données -------------------------------------------------------------- */

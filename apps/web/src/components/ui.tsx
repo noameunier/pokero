@@ -72,14 +72,16 @@ export function SectionHeading({
   title,
   action,
   className = '',
+  as: Tag = 'h2',
 }: {
   title: ReactNode;
   action?: ReactNode;
   className?: string;
+  as?: 'h2' | 'h3';
 }) {
   return (
     <div className={`mb-3 flex items-center justify-between gap-3 ${className}`}>
-      <h2 className="section-title">{title}</h2>
+      <Tag className="section-title">{title}</Tag>
       {action}
     </div>
   );
@@ -90,27 +92,31 @@ export function PageHeader({
   title,
   description,
   actions,
+  actionsClassName = '',
 }: {
   eyebrow?: string;
   title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
+  actionsClassName?: string;
 }) {
   return (
     <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
-      <div className="min-w-0">
+      <div className="min-w-0 max-w-full">
         {eyebrow ? (
           <p className="eyebrow flex items-center gap-2.5">
             <span className="inline-block h-px w-6 bg-gold-500/60" aria-hidden />
             {eyebrow}
           </p>
         ) : null}
-        <h1 className="page-title mt-2">{title}</h1>
+        <h1 className="page-title mt-2 break-words">{title}</h1>
         {description ? (
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-cream-300">{description}</p>
         ) : null}
       </div>
-      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? (
+        <div className={`flex flex-wrap items-center gap-2 ${actionsClassName}`}>{actions}</div>
+      ) : null}
     </header>
   );
 }
@@ -138,7 +144,9 @@ export function Field({
         </label>
       ) : null}
       {children}
-      {hint && !error ? <p className="mt-1.5 text-xs leading-relaxed text-cream-400">{hint}</p> : null}
+      {hint && !error ? (
+        <p className="mt-1.5 text-xs leading-relaxed text-cream-400">{hint}</p>
+      ) : null}
       {error ? (
         <p className="field-error" role="alert">
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
@@ -219,7 +227,70 @@ export function Spinner({ label = 'Chargement…' }: { label?: string }) {
 }
 
 export function Skeleton({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse rounded-[var(--radius-md)] bg-white/[0.05] ${className}`} />;
+  return (
+    <div
+      aria-hidden
+      className={`animate-pulse rounded-[var(--radius-md)] bg-white/[0.05] ${className}`}
+    />
+  );
+}
+
+export function FilterChips<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: Array<{ value: T; label: string; count?: number }>;
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-wrap gap-1.5">
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          aria-pressed={value === option.value}
+          onClick={() => onChange(option.value)}
+          className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-3.5 text-[13px] font-semibold transition-colors ${
+            value === option.value
+              ? 'border-gold-500/30 bg-gold-500/10 text-gold-300'
+              : 'border-white/[0.08] text-cream-300 hover:border-white/20 hover:bg-white/[0.04]'
+          }`}
+        >
+          {option.label}
+          {option.count !== undefined ? (
+            <span className="tabular text-xs">{option.count}</span>
+          ) : null}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function InlineNotice({
+  description,
+  retryLabel = 'Réessayer',
+  onRetry,
+}: {
+  description: string;
+  retryLabel?: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div
+      role="status"
+      className="rounded-[var(--radius-md)] border border-warning-500/20 bg-warning-500/[0.05] p-3.5"
+    >
+      <p className="text-[13px] leading-relaxed text-cream-200">{description}</p>
+      <Button variant="ghost" size="sm" className="mt-1 -ml-2" onClick={onRetry}>
+        <RefreshCw className="size-3.5" aria-hidden />
+        {retryLabel}
+      </Button>
+    </div>
+  );
 }
 
 export function EmptyState({
@@ -469,9 +540,7 @@ export function Tabs<T extends string>({
                 : 'text-cream-300 hover:bg-white/[0.03] hover:text-cream-100'
             }`}
           >
-            {active ? (
-              <span className="size-1.5 rounded-full bg-gold-500" aria-hidden />
-            ) : null}
+            {active ? <span className="size-1.5 rounded-full bg-gold-500" aria-hidden /> : null}
             {tab.label}
             {typeof tab.count === 'number' ? (
               <span
@@ -536,7 +605,9 @@ export function Switch({
     >
       <span className="min-w-0">
         <span className="block text-sm font-semibold text-cream-100">{label}</span>
-        {hint ? <span className="mt-0.5 block text-xs leading-relaxed text-cream-400">{hint}</span> : null}
+        {hint ? (
+          <span className="mt-0.5 block text-xs leading-relaxed text-cream-400">{hint}</span>
+        ) : null}
       </span>
       <span
         aria-hidden
